@@ -1,9 +1,14 @@
 Relevant Research
 
+0. Formatting
+1. Relevant Papers
+2. Pretrained Networks
 
-1. relevant papers
-2. pretrained networks
 
+0. Format:
+
+{comments, remarks that put the work into context, estimate relevance}
+(meta information like rough date/age, availability of sources/code etc)
 
 
 
@@ -56,3 +61,4 @@ http://www.vlfeat.org/matconvnet/pretrained/
 
 Pretrained network belonging to paper "R-CNNs for Pose Estimation and Action Detection"
 http://www.cs.berkeley.edu/~gkioxari/PersonNet
+{Valentin: I guess we should use this in some form at some point}
