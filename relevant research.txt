@@ -1,11 +1,14 @@
 Relevant Research
 
-######
-View- and Keypoint Detection
-(2014, Apr 2015, arxiv; ...)
-https://arxiv.org/abs/1411.6067
-{applying CNNs for keypoint detection}
 
+1. relevant papers
+2. pretrained networks
+
+
+
+
+
+1. Relevant Papers (structured by area/topic)
 
 ######
 RCNNs
@@ -18,7 +21,6 @@ Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks
 (Jan 2016, report on arxiv; Python code available at https://github.com/rbgirshick/py-faster-rcnn) 
 https://arxiv.org/pdf/1506.01497v3.pdf
 
-
 ##
 R-CNN applied to our problem:
 
@@ -26,3 +28,31 @@ R-CNNs for Pose Estimation and Action Detection
 (report, published on arxiv, no date, code/pretrained network available at http://www.cs.berkeley.edu/~gkioxari/PersonNet/)
 http://www.cs.berkeley.edu/~gkioxari/PersonNet/, http://www.cs.berkeley.edu/~gkioxari/multiloss.pdf, https://arxiv.org/abs/1406.5212
 {building a R-CNN that shares its features for two output functions, one for pose and one for action detection}
+
+
+
+######
+View- and Keypoint Detection
+(2014, Apr 2015, arxiv; ...)
+https://arxiv.org/abs/1411.6067
+{applying CNNs for keypoint detection}
+
+
+
+######
+Face and Age Classification
+http://www.openu.ac.il/home/hassner/projects/cnn_agegender/CNN_AgeGenderEstimation.pdf
+
+
+
+
+
+2. Pretrained Networks (all in one place)
+
+Model-Zoo:
+https://github.com/BVLC/caffe/wiki/Model-Zoo
+
+http://www.vlfeat.org/matconvnet/pretrained/
+
+Pretrained network belonging to paper "R-CNNs for Pose Estimation and Action Detection"
+http://www.cs.berkeley.edu/~gkioxari/PersonNet
