@@ -27,18 +27,25 @@ Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks
 https://arxiv.org/pdf/1506.01497v3.pdf
 
 ##
-R-CNN applied to our problem:
+(variants of) R-CNN applied to our problem:
 
 R-CNNs for Pose Estimation and Action Detection
-(report, published on arxiv, no date, code/pretrained network available at http://www.cs.berkeley.edu/~gkioxari/PersonNet/)
+(Mar 2015, report, published on arxiv, code/pretrained network available at http://www.cs.berkeley.edu/~gkioxari/PersonNet/)
 http://www.cs.berkeley.edu/~gkioxari/PersonNet/, http://www.cs.berkeley.edu/~gkioxari/multiloss.pdf, https://arxiv.org/abs/1406.5212
+{{way related: very similar task to ours, or rather ours is a combination of the two sub-problems tackled here}}
 {building a R-CNN that shares its features for two output functions, one for pose and one for action detection}
+{mAP of ~70% on PASCAL VOC Action data set}
 
+Contextual Action Recognition with R*CNN
+{https://github.com/gkioxari/RstarCNN, pretrained models: http://www.cs.berkeley.edu/%7Egkioxari/RstarCNN/trained_models.tar.gz}
+(Mar 2016, report, published on arxiv, code available at https://github.com/gkioxari/RstarCNN)
+{mAP of ~90% on PASCAL VOC Action data set, wow!}
+{relevance: way related: it's action recognition; though its improvements are based on considering the scenery around the object/action to be predicted, which is probably not of the same relevance in our problem domain .. }
 
 
 ######
 View- and Keypoint Detection
-(2014, Apr 2015, arxiv; ...)
+(2014 - Apr 2015, arxiv; ...)
 https://arxiv.org/abs/1411.6067
 {applying CNNs for keypoint detection}
 
