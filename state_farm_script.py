@@ -3,12 +3,10 @@ np.random.seed(2016)
 
 import os
 import glob
-import cv2
 import math
 import pickle
 import datetime
 import pandas as pd
-import statistics
 
 from sklearn.cross_validation import train_test_split
 from sklearn.cross_validation import KFold
@@ -21,10 +19,9 @@ from keras.models import model_from_json
 from sklearn.metrics import log_loss
 from scipy.misc import imread, imresize
 
-
 use_cache = 1
 # color type: 1 - grey, 3 - rgb
-color_type_global = 1
+color_type_global = 3
 
 
 # color_type = 1 - gray
@@ -40,20 +37,9 @@ def get_im_skipy(path, img_rows, img_cols, color_type=1):
     return resized
 
 
-def get_im_cv2(path, img_rows, img_cols, color_type=1):
-    # Load as grayscale
-    if color_type == 1:
-        img = cv2.imread(path, 0)
-    elif color_type == 3:
-        img = cv2.imread(path)
-    # Reduce size
-    resized = cv2.resize(img, (img_cols, img_rows))
-    return resized
-
-
 def get_driver_data():
     dr = dict()
-    path = os.path.join('driver_imgs_list.csv')
+    path = os.path.join('data', 'driver_imgs_list.csv')
     print('Read drivers data')
     f = open(path, 'r')
     line = f.readline()
@@ -77,11 +63,11 @@ def load_train(img_rows, img_cols, color_type=1):
     print('Read train images')
     for j in range(10):
         print('Load folder c{}'.format(j))
-        path = os.path.join('data', 'train', 'c' + str(j), '*.jpg')
+        path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
         files = glob.glob(path)
         for fl in files:
             flbase = os.path.basename(fl)
-            img = get_im_cv2(fl, img_rows, img_cols, color_type)
+            img = get_im_skipy(fl, img_rows, img_cols, color_type)
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
@@ -94,7 +80,7 @@ def load_train(img_rows, img_cols, color_type=1):
 
 def load_test(img_rows, img_cols, color_type=1):
     print('Read test images')
-    path = os.path.join('data', 'test', '*.jpg')
+    path = os.path.join('data', 'imgs', 'test', '*.jpg')
     files = glob.glob(path)
     X_test = []
     X_test_id = []
@@ -102,7 +88,7 @@ def load_test(img_rows, img_cols, color_type=1):
     thr = math.floor(len(files)/10)
     for fl in files:
         flbase = os.path.basename(fl)
-        img = get_im_cv2(fl, img_rows, img_cols, color_type)
+        img = get_im_skipy(fl, img_rows, img_cols, color_type)
         X_test.append(img)
         X_test_id.append(flbase)
         total += 1
@@ -257,67 +243,19 @@ def create_model_v1(img_rows, img_cols, color_type=1):
     model.add(Dropout(0.6))
 
     model.add(Flatten())
-    model.add(Dense(128))
+    model.add(Dense(1024))
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
     model.add(Dense(nb_classes))
     model.add(Activation('softmax'))
 
-    sgd = SGD(lr=0.1, decay=0, momentum=0, nesterov=False)
+    sgd = SGD(lr=0.01, decay=0, momentum=0, nesterov=False)
     model.compile(loss='categorical_crossentropy', optimizer=sgd)
     return model
 
-def create_model_alexnet_2012(img_rows, img_cols, color_type=1):
-
-    model = Sequential()
-
-    # Layer 1
-    model.add(Convolution2D(96, 11, 11, input_shape = (color_type, img_rows, img_cols), border_mode='same'))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    # Layer 2
-    model.add(Convolution2D(256, 5, 5, border_mode='same'))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    # Layer 3
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(512, 3, 3, border_mode='same'))
-    model.add(Activation('relu'))
-
-    # Layer 4
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(1024, 3, 3, border_mode='same'))
-    model.add(Activation('relu'))
-
-    # Layer 5
-    model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(1024, 3, 3, border_mode='same'))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    # Layer 6
-    model.add(Flatten())
-    model.add(Dense(3072, init='glorot_normal'))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-
-    # Layer 7
-    model.add(Dense(4096, init='glorot_normal'))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-
-    # Layer 8
-    model.add(Dense(10, init='glorot_normal'))
-    model.add(Activation('softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer=RMSprop())
-    return model
-
-
 def run_single():
     # input image dimensions
-    img_rows, img_cols = 40, 50
+    img_rows, img_cols = 224, 224
     batch_size = 128
     nb_epoch = 1
     random_state = 51
@@ -372,4 +310,4 @@ def run_single():
     return train_data, train_target, driver_id, unique_drivers, test_data, test_id
 
 
-train_data, train_target, driver_id, unique_drivers, test_data, test_id = run_single()
+run_single()
