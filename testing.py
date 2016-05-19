@@ -164,3 +164,26 @@ def run_single():
 
 
 run_single()
+
+
+# assume test-data are loaded
+
+# load the model:
+model = vgg16
+# index of layer for which you want to extract the features, i.e for the last fully connected layr
+layerIDX = len(model.layers)-1
+
+getFeatures = K.function([model.layers[0].input, K.learning_phase()],[model.layers[layersIDX].output])
+
+for idx in len(testSet):
+    img = testSet[idx]
+    z,y,x = img.shape
+    # need to reshape to make it work
+    img = img.reshape(1,zy,x)
+    feat = getFeatures([img, 0])[0][0] # the zero next to img differentiates between train and test, did not notice a difference so far
+
+# plotting example
+# plots the first feature map for the lastly input image
+import matplotlib.pyplot as plt
+plt.imshow(feat[0])
+plt.show()
