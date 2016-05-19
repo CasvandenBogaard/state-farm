@@ -13,6 +13,7 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2
 from keras.optimizers import SGD, RMSprop
 from scipy.misc import imread, imresize
 from models import vgg16
+from keras import backend as K
 
 USE_CACHE = False
 # color type: 1 - grey, 3 - rgb
