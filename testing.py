@@ -12,7 +12,7 @@ from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD, RMSprop
 from scipy.misc import imread, imresize
-from models import vgg16
+from models import vgg16_adaptation
 from keras import backend as K
 
 USE_CACHE = True
@@ -88,14 +88,6 @@ def read_and_normalize_test_data(batch, batch_num):
     print(test_data.shape[0], 'test samples')
     return test_data, test_id
 
-def merge_several_folds_mean(data, nfolds):
-    a = np.array(data[0])
-    for i in range(1, nfolds):
-        a += np.array(data[i])
-    a /= nfolds
-    return a.tolist()
-
-
 def merge_several_folds_geom(data, nfolds):
     a = np.array(data[0])
     for i in range(1, nfolds):
@@ -154,14 +146,28 @@ def generate_test_batches(size):
     return batches
 
 def run_single():
-    batch_size = 64
+    batch_size = 4
 
-    batches = generate_test_batches(batch_size)
-    model = vgg16(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
+    batches = generate_test_batches(batch_size)[:2]
+    model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
+    model.load_weights(os.path.join('cache', 'vgg16_weights.h5'))
+
+    test_ids = []
+    yfull_test = np.zeros((len(batches) * batch_size, 10))
+
+
     for i, batch in enumerate(batches):
         test_data, test_id = read_and_normalize_test_data(batch, i)
-        result = model.predict(test_data, verbose=1)
-        print(result.shape)
+        result = model.predict(test_data, verbose=1, batch_size=128)
+
+        yfull_test[i*batch_size:i*batch_size+batch_size,:] = result
+        test_ids += test_id
+
+    print(yfull_test.shape)
+
+    info_string = 'loss_r_' + str(IMG_SHAPE[0]) + '_c_' + str(IMG_SHAPE[1])
+
+    create_submission(yfull_test, test_ids, info_string)
 
 
 run_single()
