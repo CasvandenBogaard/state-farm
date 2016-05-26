@@ -68,7 +68,9 @@ def vgg16_adaptation(img_rows, img_cols, color_type=1):
     model = _vgg(img_rows, img_cols, color_type)
 
     model.layers.pop()
-    model.add(Dense(10, activation='softmax'))
+    model.outputs = [model.layers[-1].output]
+    model.layers[-1].outbound_nodes = []
+    model.add(Dense(10, activation='softmax', init='he_uniform'))
 
     # Learning rate is changed to 0.001
     sgd = SGD(lr=1e-3, decay=1e-6, momentum=0.9, nesterov=True)

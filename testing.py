@@ -83,7 +83,11 @@ def read_and_normalize_test_data(batch, batch_num):
     test_data = np.array(test_data, dtype=np.uint8)
     test_data = test_data.reshape(test_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
     test_data = test_data.astype('float32')
-    test_data /= 255
+
+    mean_pixel = [103.939, 116.779, 123.68]
+    for c in range(3):
+        test_data[:, c, :, :] = (test_data[:, c, :, :] - mean_pixel[c])/255
+
     print('Test shape:', test_data.shape)
     print(test_data.shape[0], 'test samples')
     return test_data, test_id
@@ -143,24 +147,24 @@ def generate_test_batches(size):
     files = glob.glob(path)
 
     batches = [files[i:i+size] for i in range(0, len(files), size)]
-    return batches
+    return batches, len(files)
 
 def run_single():
     batch_size = 5000
 
-    batches = generate_test_batches(batch_size)
+    batches, total = generate_test_batches(batch_size)
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
     model.load_weights(os.path.join('cache', 'vgg16_weights.h5'))
 
     test_ids = []
-    yfull_test = np.zeros((len(batches) * batch_size, 10))
+    yfull_test = np.zeros((total, 10))
 
 
     for i, batch in enumerate(batches):
         test_data, test_id = read_and_normalize_test_data(batch, i)
         result = model.predict(test_data, verbose=1, batch_size=128)
 
-        yfull_test[i*batch_size:i*batch_size+batch_size,:] = result
+        yfull_test[i*batch_size:i*batch_size+len(result),:] = result
         test_ids += test_id
 
 

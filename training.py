@@ -61,16 +61,12 @@ def load_train():
         print('Load folder c{}'.format(j))
         path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
         files = glob.glob(path)
-        cnt = 0
         for fl in files:
             flbase = os.path.basename(fl)
             img = get_im_skipy(fl)
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
-            if cnt > 100:
-                break
-            cnt += 1
 
     unique_drivers = sorted(list(set(driver_id)))
     print('Unique drivers: {}'.format(len(unique_drivers)))
@@ -115,7 +111,11 @@ def read_and_normalize_train_data():
     train_data = train_data.transpose(0, 3, 1, 2)
     train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
-    train_data /= 255
+
+
+    mean_pixel = [103.939, 116.779, 123.68]
+    for c in range(3):
+        train_data[:, c, :, :] = (train_data[:, c, :, :] - mean_pixel[c])/255
 
     print('Train shape:', train_data.shape)
     print(train_data.shape[0], 'train samples')
@@ -162,7 +162,7 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
 
 def run_single():
     # input image dimensions
-    batch_size = 128
+    batch_size = 64
     nb_epoch = 2
 
     train_data, train_target, driver_id, unique_drivers = read_and_normalize_train_data()
@@ -186,7 +186,7 @@ def run_single():
     model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
               show_accuracy=True, verbose=1, validation_data=(X_valid, Y_valid))
 
-    predictions_valid = model.predict(X_valid, batch_size=128, verbose=1)
+    predictions_valid = model.predict(X_valid, batch_size=64, verbose=1)
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
 
