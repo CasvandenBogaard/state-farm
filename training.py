@@ -8,7 +8,7 @@ from sklearn.cross_validation import train_test_split
 from keras.utils import np_utils
 from sklearn.metrics import log_loss
 
-from models.vgg import vgg16_adaptation
+from resnet import resnet
 from tools import get_im_skipy, cache_data, restore_data
 
 USE_CACHE = False
@@ -128,17 +128,16 @@ def run_single():
     print('Start Single Run')
     print('Split train: ', len(X_train), len(Y_train))
     print('Split valid: ', len(X_valid), len(Y_valid))
-    print('Train drivers: ', unique_list_train)
-    print('Test drivers: ', unique_list_valid)
+    print('Train drivers: ', train_drivers)
+    print('Test drivers: ', test_drivers)
 
-    model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
-              show_accuracy=True, verbose=1, validation_data=(X_valid, Y_valid))
+    model = resnet()
+    model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch, verbose=1, validation_data=(X_valid, Y_valid))
 
     predictions_valid = model.predict(X_valid, batch_size=64, verbose=1)
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
 
-    model.save_weights(os.path.join('cache', 'vgg16_weights.h5'), True)
+    model.save_weights(os.path.join('cache', 'resnet_weights.h5'), True)
 
 run_single()

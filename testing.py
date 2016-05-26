@@ -5,7 +5,7 @@ import glob
 import datetime
 import pandas as pd
 
-from models.vgg import vgg16_adaptation
+from resnet import resnet
 from tools import get_im_skipy, cache_data, restore_data
 
 USE_CACHE = True
@@ -74,8 +74,8 @@ def run_single():
     batch_size = 5000
 
     batches, total = generate_test_batches(batch_size)
-    model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.load_weights(os.path.join('cache', 'vgg16_weights.h5'))
+    model = resnet()
+    model.load_weights(os.path.join('cache', 'resnet_weights.h5'))
 
     test_ids = []
     yfull_test = np.zeros((total, 10))
