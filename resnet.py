@@ -113,6 +113,12 @@ def resnet():
     block3 = _residual_block(block_fn, nb_filters=256, repetations=6)(block2)
     block4 = _residual_block(block_fn, nb_filters=512, repetations=3)(block3)
 
+    # alternative: 152
+    #block1 = _residual_block(block_fn, nb_filters=64, repetations=3, is_first_layer=True)(pool1)
+    #block2 = _residual_block(block_fn, nb_filters=128, repetations=8)(block1)
+    #block3 = _residual_block(block_fn, nb_filters=256, repetations=36)(block2)
+    #block4 = _residual_block(block_fn, nb_filters=512, repetations=3)(block3) 
+
     # Classifier block
     pool2 = AveragePooling2D(pool_size=(7, 7), strides=(1, 1), border_mode="same")(block4)
     flatten1 = Flatten()(pool2)
