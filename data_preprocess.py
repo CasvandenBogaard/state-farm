@@ -1,21 +1,30 @@
 import numpy as np
+np.random.seed(2016)
 
 import os
 import glob
+from skimage.transform import resize as imresize
+from skimage.io import imread
+import math
+
 import pickle
-
+import datetime
 from sklearn.cross_validation import train_test_split
-from keras.utils import np_utils
-from sklearn.metrics import log_loss
 
-from models.vgg import vgg16_adaptation
-from tools import get_im_skipy, cache_data, restore_data
 
-USE_CACHE = False
+
+USE_CACHE = 1
 # color type: 1 - grey, 3 - rgb
-COLOR_TYPE = 3
-IMG_SHAPE = (224, 224)
 
+COLOR_TYPE = 3
+IMG_SHAPE = (32, 32)
+
+# color_type = 1 - gray
+# color_type = 3 - RGB
+def get_im_skipy(path):
+    img = imread(path, COLOR_TYPE == 1)
+    resized = imresize(img, IMG_SHAPE)
+    return resized
 
 def get_driver_data():
     dr = dict()
@@ -45,18 +54,37 @@ def load_train():
         print('Load folder c{}'.format(j))
         path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
         files = glob.glob(path)
+        cnt = 0
         for fl in files:
             flbase = os.path.basename(fl)
             img = get_im_skipy(fl)
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
-
+            if cnt > 100:
+                break
+            cnt += 1
     unique_drivers = sorted(list(set(driver_id)))
     print('Unique drivers: {}'.format(len(unique_drivers)))
     print(unique_drivers)
     return X_train, y_train, driver_id, unique_drivers
 
+def cache_data(data, path):
+    if not os.path.isdir('cache'):
+        os.mkdir('cache')
+    if os.path.isdir(os.path.dirname(path)):
+        file = open(path, 'wb')
+        pickle.dump(data, file)
+        file.close()
+    else:
+        print('Directory doesnt exists')
+
+def restore_data(path):
+    data = dict()
+    if os.path.isfile(path):
+        file = open(path, 'rb')
+        data = pickle.load(file)
+    return data
 
 def split_validation_set(train, target, test_size):
     random_state = 51
@@ -73,20 +101,44 @@ def read_and_normalize_train_data():
         print('Restore train from cache!')
         (train_data, train_target, driver_id, unique_drivers) = restore_data(cache_path)
 
-    train_data = np.array(train_data, dtype=np.uint8)
+    print(train_data[0])
+    train_data = np.array(train_data)
+    print(train_data[0])
     train_target = np.array(train_target, dtype=np.uint8)
+    print(train_target)
     train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
+    print(train_data[0])
     train_data = train_data.transpose(0, 3, 1, 2)
-    train_target = np_utils.to_categorical(train_target, 10)
+    #train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
-
-    mean_pixel = [103.939, 116.779, 123.68]
-    for c in range(3):
-        train_data[:, c, :, :] = (train_data[:, c, :, :] - mean_pixel[c])/255
+    train_data /= 255
 
     print('Train shape:', train_data.shape)
     print(train_data.shape[0], 'train samples')
     return train_data, train_target, driver_id, unique_drivers
+
+
+def dict_to_list(d):
+    ret = []
+    for i in d.items():
+        ret.append(i[1])
+    return ret
+
+
+def merge_several_folds_mean(data, nfolds):
+    a = np.array(data[0])
+    for i in range(1, nfolds):
+        a += np.array(data[i])
+    a /= nfolds
+    return a.tolist()
+
+
+def merge_several_folds_geom(data, nfolds):
+    a = np.array(data[0])
+    for i in range(1, nfolds):
+        a *= np.array(data[i])
+    a = np.power(a, 1/nfolds)
+    return a.tolist()
 
 
 def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
@@ -103,27 +155,34 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
     index = np.array(index, dtype=np.uint32)
     return data, target, index
 
-def split_drivers(driver_list):
-    n = len(driver_list)
-    test_indices = list(np.random.choice(range(n), n//10, replace=False))
+def get_train_data():
+    train_data, train_target, driver_id, unique_drivers = read_and_normalize_train_data()
+    unique_list_train = ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024',
+                     'p026', 'p035', 'p039', 'p041', 'p042', 'p045', 'p047', 'p049',
+                     'p050', 'p051', 'p052', 'p056', 'p061', 'p064', 'p066', 'p072',
+                     'p075']
+    X_train, Y_train, train_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_train)
+    #print(X_train)
+    unique_list_valid = ['p081']
+    X_valid, Y_valid, test_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_valid)
+    return X_train, Y_train, train_index
 
-    test = [driver_list[i] for i in test_indices]
-    train =[driver_list[i] for i in range(n) if i not in test_indices]
-    
-    return train, test
 
 
 def run_single():
     # input image dimensions
-    batch_size = 64
+    batch_size = 128
     nb_epoch = 2
 
     train_data, train_target, driver_id, unique_drivers = read_and_normalize_train_data()
-    
-    train_drivers, test_drivers = split_drivers(unique_drivers)
 
-    X_train, Y_train, train_index = copy_selected_drivers(train_data, train_target, driver_id, train_drivers)
-    X_valid, Y_valid, test_index = copy_selected_drivers(train_data, train_target, driver_id, test_drivers)
+    unique_list_train = ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024',
+                     'p026', 'p035', 'p039', 'p041', 'p042', 'p045', 'p047', 'p049',
+                     'p050', 'p051', 'p052', 'p056', 'p061', 'p064', 'p066', 'p072',
+                     'p075']
+    X_train, Y_train, train_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_train)
+    unique_list_valid = ['p081']
+    X_valid, Y_valid, test_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_valid)
 
     print('Start Single Run')
     print('Split train: ', len(X_train), len(Y_train))
@@ -131,14 +190,5 @@ def run_single():
     print('Train drivers: ', unique_list_train)
     print('Test drivers: ', unique_list_valid)
 
-    model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
-              show_accuracy=True, verbose=1, validation_data=(X_valid, Y_valid))
 
-    predictions_valid = model.predict(X_valid, batch_size=64, verbose=1)
-    score = log_loss(Y_valid, predictions_valid)
-    print('Score log_loss: ', score)
 
-    model.save_weights(os.path.join('cache', 'vgg16_weights.h5'), True)
-
-run_single()
