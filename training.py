@@ -68,7 +68,7 @@ def load_train():
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
-            if cnt > 1:
+            if cnt > 100:
                 break
             cnt += 1
 
@@ -162,8 +162,8 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
 
 def run_single():
     # input image dimensions
-    batch_size = 14
-    nb_epoch = 1
+    batch_size = 128
+    nb_epoch = 2
 
     train_data, train_target, driver_id, unique_drivers = read_and_normalize_train_data()
 

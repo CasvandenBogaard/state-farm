@@ -146,9 +146,9 @@ def generate_test_batches(size):
     return batches
 
 def run_single():
-    batch_size = 4
+    batch_size = 5000
 
-    batches = generate_test_batches(batch_size)[:2]
+    batches = generate_test_batches(batch_size)
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
     model.load_weights(os.path.join('cache', 'vgg16_weights.h5'))
 
@@ -163,7 +163,6 @@ def run_single():
         yfull_test[i*batch_size:i*batch_size+batch_size,:] = result
         test_ids += test_id
 
-    print(yfull_test.shape)
 
     info_string = 'loss_r_' + str(IMG_SHAPE[0]) + '_c_' + str(IMG_SHAPE[1])
 
