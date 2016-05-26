@@ -19,7 +19,7 @@ from keras.models import model_from_json
 from sklearn.metrics import log_loss
 from scipy.misc import imread, imresize
 
-from models import vgg16
+from models import vgg16_adaptation
 
 USE_CACHE = False
 # color type: 1 - grey, 3 - rgb
@@ -68,7 +68,7 @@ def load_train():
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
-            if cnt > 1:
+            if cnt > 100:
                 break
             cnt += 1
 
@@ -112,9 +112,11 @@ def read_and_normalize_train_data():
     train_data = np.array(train_data, dtype=np.uint8)
     train_target = np.array(train_target, dtype=np.uint8)
     train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
+    train_data = train_data.transpose(0, 3, 1, 2)
     train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
     train_data /= 255
+
     print('Train shape:', train_data.shape)
     print(train_data.shape[0], 'train samples')
     return train_data, train_target, driver_id, unique_drivers
@@ -160,13 +162,11 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
 
 def run_single():
     # input image dimensions
-    batch_size = 14
-    nb_epoch = 1
+    batch_size = 128
+    nb_epoch = 2
 
     train_data, train_target, driver_id, unique_drivers = read_and_normalize_train_data()
 
-    yfull_train = dict()
-    yfull_test = []
     unique_list_train = ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024',
                      'p026', 'p035', 'p039', 'p041', 'p042', 'p045', 'p047', 'p049',
                      'p050', 'p051', 'p052', 'p056', 'p061', 'p064', 'p066', 'p072',
@@ -182,16 +182,14 @@ def run_single():
     print('Test drivers: ', unique_list_valid)
 
 
-    model = vgg16(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.summary()
+    model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
     model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
               show_accuracy=True, verbose=1, validation_data=(X_valid, Y_valid))
-
-    # score = model.evaluate(X_valid, Y_valid, show_accuracy=True, verbose=0)
-    # print('Score log_loss: ', score[0])
 
     predictions_valid = model.predict(X_valid, batch_size=128, verbose=1)
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
+
+    model.save_weights(os.path.join('cache', 'vgg16_weights.h5'), True)
 
 run_single()
