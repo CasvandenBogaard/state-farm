@@ -15,7 +15,7 @@ from scipy.misc import imread, imresize
 from models import vgg16
 from keras import backend as K
 
-USE_CACHE = False
+USE_CACHE = True
 # color type: 1 - grey, 3 - rgb
 COLOR_TYPE = 3
 IMG_SHAPE = (224, 224)
@@ -73,7 +73,7 @@ def read_and_normalize_test_data(batch, batch_num):
 
     cache_path = os.path.join('cache', 'test_{}x{}_t{}_b{}.dat'.format(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE, batch_num))
 
-    if not os.path.isfile(cache_path) or USE_CACHE:
+    if not os.path.isfile(cache_path) or not USE_CACHE:
         test_data, test_id = load_test(batch)
         cache_data((test_data, test_id), cache_path)
     else:
