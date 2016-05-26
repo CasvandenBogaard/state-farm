@@ -2,18 +2,11 @@ import numpy as np
 
 import os
 import glob
-import math
-import cPickle as pickle
 import datetime
 import pandas as pd
 
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
-from keras.optimizers import SGD, RMSprop
-from scipy.misc import imread, imresize
-from models import vgg16_adaptation
-from keras import backend as K
+from models.vgg import vgg16_adaptation
+from tools import get_im_skipy, cache_data, restore_data
 
 USE_CACHE = True
 # color type: 1 - grey, 3 - rgb
@@ -21,42 +14,17 @@ COLOR_TYPE = 3
 IMG_SHAPE = (224, 224)
 
 
-# color_type = 1 - gray
-# color_type = 3 - RGB
-def get_im_skipy(path):
-    img = imread(path, COLOR_TYPE == 1)
-    resized = imresize(img, IMG_SHAPE)
-    return resized
-
 def load_test(files):
     X_test = []
     X_test_id = []
     for fl in files:
         flbase = os.path.basename(fl)
-        img = get_im_skipy(fl)
+        img = get_im_skipy(fl, COLOR_TYPE, IMG_SHAPE)
         X_test.append(img)
         X_test_id.append(flbase)
 
     return X_test, X_test_id
 
-
-def cache_data(data, path):
-    if not os.path.isdir('cache'):
-        os.mkdir('cache')
-    if os.path.isdir(os.path.dirname(path)):
-        file = open(path, 'wb')
-        pickle.dump(data, file)
-        file.close()
-    else:
-        print('Directory doesnt exists')
-
-
-def restore_data(path):
-    data = dict()
-    if os.path.isfile(path):
-        file = open(path, 'rb')
-        data = pickle.load(file)
-    return data
 
 def create_submission(predictions, test_id, info):
     result1 = pd.DataFrame(predictions, columns=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'])
@@ -67,6 +35,7 @@ def create_submission(predictions, test_id, info):
     suffix = info + '_' + str(now.strftime("%Y-%m-%d-%H-%M"))
     sub_file = os.path.join('subm', 'submission_' + suffix + '.csv')
     result1.to_csv(sub_file, index=False)
+
 
 def read_and_normalize_test_data(batch, batch_num):
     print("Reading test batch {}".format(batch_num))
@@ -92,55 +61,6 @@ def read_and_normalize_test_data(batch, batch_num):
     print(test_data.shape[0], 'test samples')
     return test_data, test_id
 
-def merge_several_folds_geom(data, nfolds):
-    a = np.array(data[0])
-    for i in range(1, nfolds):
-        a *= np.array(data[i])
-    a = np.power(a, 1/nfolds)
-    return a.tolist()
-
-
-def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
-    data = []
-    target = []
-    index = []
-    for i in range(len(driver_id)):
-        if driver_id[i] in driver_list:
-            data.append(train_data[i])
-            target.append(train_target[i])
-            index.append(i)
-    data = np.array(data, dtype=np.float32)
-    target = np.array(target, dtype=np.float32)
-    index = np.array(index, dtype=np.uint32)
-    return data, target, index
-
-
-def create_model_v1(img_rows, img_cols, color_type=1):
-    nb_classes = 10
-    nb_filters = 5 # number of convolutional filters to use
-    nb_pool = 2 # size of pooling area for max pooling
-    nb_conv = 4 # convolution kernel size
-
-    model = Sequential()
-    model.add(Convolution2D(nb_filters, nb_conv, nb_conv,
-                            border_mode='valid',
-                            input_shape=(color_type, img_rows, img_cols)))
-    model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters, nb_conv, nb_conv))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(nb_pool, nb_pool)))
-    model.add(Dropout(0.6))
-
-    model.add(Flatten())
-    model.add(Dense(1024))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(nb_classes))
-    model.add(Activation('softmax'))
-
-    sgd = SGD(lr=0.01, decay=0, momentum=0, nesterov=False)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd)
-    return model
 
 def generate_test_batches(size):
     path = os.path.join('data', 'imgs', 'test', '*.jpg')
@@ -148,6 +68,7 @@ def generate_test_batches(size):
 
     batches = [files[i:i+size] for i in range(0, len(files), size)]
     return batches, len(files)
+
 
 def run_single():
     batch_size = 5000
