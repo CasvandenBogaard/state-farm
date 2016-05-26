@@ -103,6 +103,15 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
     index = np.array(index, dtype=np.uint32)
     return data, target, index
 
+def split_drivers(driver_list):
+    n = len(driver_list)
+    test_indices = list(np.random.choice(range(n), n//10, replace=False))
+
+    test = [driver_list[i] for i in test_indices]
+    train =[driver_list[i] for i in range(n) if i not in test_indices]
+    
+    return train, test
+
 
 def run_single():
     # input image dimensions
@@ -110,14 +119,11 @@ def run_single():
     nb_epoch = 2
 
     train_data, train_target, driver_id, unique_drivers = read_and_normalize_train_data()
+    
+    train_drivers, test_drivers = split_drivers(unique_drivers)
 
-    unique_list_train = ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024',
-                     'p026', 'p035', 'p039', 'p041', 'p042', 'p045', 'p047', 'p049',
-                     'p050', 'p051', 'p052', 'p056', 'p061', 'p064', 'p066', 'p072',
-                     'p075']
-    X_train, Y_train, train_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_train)
-    unique_list_valid = ['p081']
-    X_valid, Y_valid, test_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_valid)
+    X_train, Y_train, train_index = copy_selected_drivers(train_data, train_target, driver_id, train_drivers)
+    X_valid, Y_valid, test_index = copy_selected_drivers(train_data, train_target, driver_id, test_drivers)
 
     print('Start Single Run')
     print('Split train: ', len(X_train), len(Y_train))
