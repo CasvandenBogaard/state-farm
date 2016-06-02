@@ -85,7 +85,7 @@ def read_and_normalize_train_data(batch, batch_num):
         (train_data, train_id) = restore_data(cache_path)
 
     train_data = np.array(train_data, dtype=np.uint8)
-    train_data = train_data.reshape(train_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
+    train_data = train_data.transpose((0, 3, 1, 2))
     train_data = train_data.astype('float32')
 
     mean_pixel = [103.939, 116.779, 123.68]
@@ -110,7 +110,7 @@ def read_and_normalize_test_data(batch, batch_num):
         (test_data, test_id) = restore_data(cache_path)
 
     test_data = np.array(test_data, dtype=np.uint8)
-    test_data = test_data.reshape(test_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
+    test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 
     mean_pixel = [103.939, 116.779, 123.68]
@@ -131,7 +131,7 @@ def generate_test_batches(size):
 
 def generate_train_batches(j, size):
     path = os.path.join('data', 'imgs', 'train', 'c{}'.format(j), '*.jpg')
-    files = glob.glob(path)[0:10]
+    files = glob.glob(path)
 
     batches = [files[i:i+size] for i in range(0, len(files), size)]
     return batches, len(files)    
@@ -206,4 +206,4 @@ def run_single_test():
     print("Test activations saved")
     
 run_single_train()
-#run_single_test()
+run_single_test()
