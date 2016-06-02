@@ -4,15 +4,17 @@ import os
 import glob
 import datetime
 import pandas as pd
+import sys
 
 from models.vgg import vgg16_adaptation
 from tools import get_im_skipy, cache_data, restore_data
 
-USE_CACHE = True
+USE_CACHE = False
 # color type: 1 - grey, 3 - rgb
 COLOR_TYPE = 3
 IMG_SHAPE = (224, 224)
 
+TRAIN_NUM = sys.argv[1]
 
 def load_test(files):
     X_test = []
@@ -50,7 +52,6 @@ def read_and_normalize_test_data(batch, batch_num):
         (test_data, test_id) = restore_data(cache_path)
 
     test_data = np.array(test_data, dtype=np.uint8)
-    test_data = test_data.reshape(test_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
     test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 
@@ -76,7 +77,7 @@ def run_single():
 
     batches, total = generate_test_batches(batch_size)
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.load_weights(os.path.join('cache', 'resnet_weights.h5'))
+    model.load_weights(os.path.join('cache', 'vgg_adaptation_weights_{}.h5'.format(TRAIN_NUM)))
 
     test_ids = []
     yfull_test = np.zeros((total, 10))
