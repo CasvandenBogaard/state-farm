@@ -13,7 +13,7 @@ from sklearn.cross_validation import train_test_split
 
 
 
-USE_CACHE = 1
+USE_CACHE = 0
 # color type: 1 - grey, 3 - rgb
 
 COLOR_TYPE = 3
@@ -137,9 +137,7 @@ def read_and_normalize_test_data(batch, batch_num):
     test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 
-    mean_pixel = [103.939, 116.779, 123.68]
-    for c in range(3):
-        test_data[:, c, :, :] = (test_data[:, c, :, :] - mean_pixel[c])
+    test_data /= 255
 
     print('Test shape:', test_data.shape)
     print(test_data.shape[0], 'test samples')
