@@ -42,6 +42,18 @@ def get_driver_data():
     return dr
 
 
+def load_test(files):
+    X_test = []
+    X_test_id = []
+    for fl in files:
+        flbase = os.path.basename(fl)
+        img = get_im_skipy(fl, COLOR_TYPE, IMG_SHAPE)
+        X_test.append(img)
+        X_test_id.append(flbase)
+
+    return X_test, X_test_id
+
+
 def load_train():
     X_train = []
     y_train = []
@@ -110,6 +122,30 @@ def read_and_normalize_train_data():
     print(train_data.shape[0], 'train samples')
     return train_data, train_target, driver_id, unique_drivers
 
+def read_and_normalize_test_data(batch, batch_num):
+    print("Reading test batch {}".format(batch_num))
+
+    cache_path = os.path.join('cache', 'test_{}x{}_t{}_b{}.dat'.format(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE, batch_num))
+
+    if not os.path.isfile(cache_path) or not USE_CACHE:
+        test_data, test_id = load_test(batch)
+        cache_data((test_data, test_id), cache_path)
+    else:
+        print('Restore test from cache!')
+        (test_data, test_id) = restore_data(cache_path)
+
+    test_data = np.array(test_data, dtype=np.uint8)
+    test_data = test_data.reshape(test_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
+    test_data = test_data.transpose((0, 3, 1, 2))
+    test_data = test_data.astype('float32')
+
+    mean_pixel = [103.939, 116.779, 123.68]
+    for c in range(3):
+        test_data[:, c, :, :] = (test_data[:, c, :, :] - mean_pixel[c])
+
+    print('Test shape:', test_data.shape)
+    print(test_data.shape[0], 'test samples')
+    return test_data, test_id
 
 def dict_to_list(d):
     ret = []
@@ -132,6 +168,14 @@ def merge_several_folds_geom(data, nfolds):
         a *= np.array(data[i])
     a = np.power(a, 1/nfolds)
     return a.tolist()
+
+def generate_test_batches(size):
+    path = os.path.join('data', 'imgs', 'test', '*.jpg')
+    files = glob.glob(path)
+
+    batches = [files[i:i+size] for i in range(0, len(files), size)]
+    return batches, len(files)
+
 
 
 def copy_selected_drivers(train_data, train_target, driver_id, driver_list):

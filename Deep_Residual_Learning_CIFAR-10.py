@@ -15,13 +15,14 @@ import time
 import string
 import random
 import pickle
+import datetime
 
 import numpy as np
 import theano.tensor as T
 import theano
 import lasagne
 import data_preprocess as dp
-
+import pandas as pd
 
 # for the larger networks (n>=9), we need to adjust pythons recursion limit
 sys.setrecursionlimit(10000)
@@ -54,6 +55,15 @@ def load_data():
     #     X_test = lasagne.utils.floatX(X_test),
     #     Y_test = Y_test.astype('int32'),)
 
+def create_submission(predictions, test_id, info):
+    result1 = pd.DataFrame(predictions, columns=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'])
+    result1.loc[:, 'img'] = pd.Series(test_id, index=result1.index)
+    now = datetime.datetime.now()
+    if not os.path.isdir('subm'):
+        os.mkdir('subm')
+    suffix = info + '_' + str(now.strftime("%Y-%m-%d-%H-%M"))
+    sub_file = os.path.join('subm', 'submission_' + suffix + '.csv')
+    result1.to_csv(sub_file, index=False)
 # ##################### Build the neural network model #######################
 
 from lasagne.layers import Conv2DLayer as ConvLayer
@@ -220,6 +230,9 @@ def main(n=5, num_epochs=82, model=None):
     # Compile a second function computing the validation loss and accuracy:
     val_fn = theano.function([input_var, target_var], [test_loss, test_acc])
 
+    print("compile test function")
+    test_fn = theano.function([input_var], test_prediction)
+
     if model is None:
         # # launch the training loop
         print("Starting training...")
@@ -272,28 +285,44 @@ def main(n=5, num_epochs=82, model=None):
     else:
         # load network weights from model file\
         print("load params..")
-        with np.load("cifar_model_n5.npz") as f:
+        with np.load(model) as f:
              param_values = [f['arr_%d' % i] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(network, param_values)
 
     print("testing..")
     # Calculate validation error of model:
-    test_err = 0
-    test_acc = 0
-    test_batches = 0
-    print(X_train.shape)
-    print(Y_train.shape)
-    index = 0
-    for batch in iterate_minibatches(X_train, Y_train, 500, shuffle=False):
-        inputs, targets = batch
-        err, acc = val_fn(inputs, targets)
-        test_err += err
-        test_acc += acc
-        test_batches += 1
-    print("Final results:")
-    print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-    print("  test accuracy:\t\t{:.2f} %".format(
-        test_acc / test_batches * 100))
+    # test_err = 0
+    # test_acc = 0
+    # test_batches = 0
+    # print(X_train.shape)
+    # print(Y_train.shape)
+    # index = 0
+    # for batch in iterate_minibatches(X_train, Y_train, 500, shuffle=False):
+    #     inputs, targets = batch
+    #     err, acc = val_fn(inputs, targets)
+    #     test_err += err
+    #     test_acc += acc
+    #     test_batches += 1
+    # print("Final results:")
+    # print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+    # print("  test accuracy:\t\t{:.2f} %".format(
+    #     test_acc / test_batches * 100))
+    batch_size = 500
+    batches, total = dp.generate_test_batches(batch_size)
+    test_ids = []
+    yfull_test = np.zeros((total, 10))
+
+    for i, batch in enumerate(batches):
+        test_data, test_id = dp.read_and_normalize_test_data(batch, i)
+        scores = test_fn(test_data)
+        print(scores)
+        yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
+        test_ids += test_id
+
+    info_string = 'lasagne' + str(32) + '_c_' + str(32)
+
+    create_submission(yfull_test, test_ids, info_string)
+
 
 
 if __name__ == '__main__':
@@ -312,4 +341,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(5,30,None)
+        main(5,30,"cifar10_deep_residual_model.npz")
