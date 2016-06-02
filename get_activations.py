@@ -16,7 +16,7 @@ from scipy.misc import imread, imresize
 from models.vgg import vgg16_adaptation
 from keras import backend as K
 
-USE_CACHE = True
+USE_CACHE = False
 # color type: 1 - grey, 3 - rgb
 COLOR_TYPE = 3
 IMG_SHAPE = (224, 224)
@@ -141,7 +141,7 @@ def read_and_normalize_test_data(batch, batch_num):
 
     mean_pixel = [103.939, 116.779, 123.68]
     for c in range(3):
-        test_data[:, c, :, :] = (test_data[:, c, :, :] - mean_pixel[c])/255
+        test_data[:, c, :, :] = (test_data[:, c, :, :] - mean_pixel[c])
 
     print('Test shape:', test_data.shape)
     print(test_data.shape[0], 'test samples')
@@ -150,7 +150,7 @@ def read_and_normalize_test_data(batch, batch_num):
 
 def generate_test_batches(size):
     path = os.path.join('data', 'imgs', 'test', '*.jpg')
-    files = glob.glob(path)
+    files = glob.glob(path)[0:300]
 
     batches = [files[i:i+size] for i in range(0, len(files), size)]
     return batches, len(files)
@@ -181,7 +181,7 @@ def run_single_train():
     print("Training activations saved")
 
 def run_single_test():
-    batch_size = 128
+    batch_size = 64
 
     batches, total = generate_test_batches(batch_size)
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
@@ -211,5 +211,5 @@ def run_single_test():
     df.to_csv("activations_test", index=False)
     print("Test activations saved")
     
-run_single_train()
+#run_single_train()
 run_single_test()
