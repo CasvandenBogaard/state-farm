@@ -44,31 +44,6 @@ def get_driver_data():
     f.close()
     return dr
 
-def load_train():
-    X_train = []
-    y_train = []
-    driver_id = []
-
-    driver_data = get_driver_data()
-
-    print('Read train images')
-    for j in range(10):
-        print('Load folder c{}'.format(j))
-        path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
-        files = glob.glob(path)
-        for fl in files:
-            flbase = os.path.basename(fl)
-            img = get_im_skipy(fl)
-            X_train.append(img)
-            y_train.append(fl[-13:])
-            driver_id.append(driver_data[flbase])
-
-
-    unique_drivers = sorted(list(set(driver_id)))
-    print('Unique drivers: {}'.format(len(unique_drivers)))
-    print(unique_drivers)
-    return X_train, y_train, driver_id, unique_drivers
-
 def load_test(files):
     X_test = []
     X_test_id = []
@@ -99,28 +74,27 @@ def restore_data(path):
         data = pickle.load(file)
     return data
 
-def read_and_normalize_train_data():
-    cache_path = os.path.join('cache', 'train_{}x{}_t{}.dat'.format(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE))
-    if not os.path.isfile(cache_path) or (not USE_CACHE):
-        train_data, train_target, driver_id, unique_drivers = load_train()
-        cache_data((train_data, train_target, driver_id, unique_drivers), cache_path)
+def read_and_normalize_train_data(batch, batch_num):
+    cache_path = os.path.join('cache', 'train_{}x{}_t{}_b{}.dat'.format(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE, batch_num))
+    
+    if not os.path.isfile(cache_path) or not USE_CACHE:
+        train_data, train_id = load_test(batch)
+        cache_data((train_data, train_id), cache_path)
     else:
-        print('Restore train from cache!')
-        (train_data, train_target, driver_id, unique_drivers) = restore_data(cache_path)
+        print('Restore test from cache!')
+        (train_data, train_id) = restore_data(cache_path)
 
     train_data = np.array(train_data, dtype=np.uint8)
-    train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    train_data = train_data.transpose(0, 3, 1, 2)
+    train_data = train_data.transpose((0, 3, 1, 2))
     train_data = train_data.astype('float32')
-
 
     mean_pixel = [103.939, 116.779, 123.68]
     for c in range(3):
-        train_data[:, c, :, :] = (train_data[:, c, :, :] - mean_pixel[c])/255
+        train_data[:, c, :, :] = (train_data[:, c, :, :] - mean_pixel[c])
 
     print('Train shape:', train_data.shape)
     print(train_data.shape[0], 'train samples')
-    return train_data, train_target, driver_id, unique_drivers
+    return train_data, train_id
 
 
 def read_and_normalize_test_data(batch, batch_num):
@@ -136,7 +110,7 @@ def read_and_normalize_test_data(batch, batch_num):
         (test_data, test_id) = restore_data(cache_path)
 
     test_data = np.array(test_data, dtype=np.uint8)
-    test_data = test_data.reshape(test_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
+    test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 
     mean_pixel = [103.939, 116.779, 123.68]
@@ -150,35 +124,55 @@ def read_and_normalize_test_data(batch, batch_num):
 
 def generate_test_batches(size):
     path = os.path.join('data', 'imgs', 'test', '*.jpg')
-    files = glob.glob(path)[0:300]
+    files = glob.glob(path)
 
     batches = [files[i:i+size] for i in range(0, len(files), size)]
     return batches, len(files)
 
+def generate_train_batches(j, size):
+    path = os.path.join('data', 'imgs', 'train', 'c{}'.format(j), '*.jpg')
+    files = glob.glob(path)
+
+    batches = [files[i:i+size] for i in range(0, len(files), size)]
+    return batches, len(files)    
+
 
 def run_single_train():
-    
+    batch_size = 2
+
+    print "training with batch size " + str(batch_size)
+
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
 
     get_fc1_output = K.function([model.layers[0].input, K.learning_phase()], [model.layers[32].output])
     get_fc2_output = K.function([model.layers[0].input, K.learning_phase()], [model.layers[34].output])
     
+    for j in range(10):
+        print "Starting subset {}".format(j)
+        
+        batches, total = generate_train_batches(j, batch_size)
+        
+        train_ids = []
+        yfull_train = np.zeros((total, 8192))
+        
+        for i, batch in enumerate(batches):
+            print("Doing batch {} of {}".format(i+1, len(batches)))
+            train_data, train_id = read_and_normalize_train_data(batch, i)
+            print train_id
+            activations1 = get_fc1_output([train_data, 0])[0]
+            activations2 = get_fc2_output([train_data, 0])[0]
 
-    train_data, train_id, _, _ = read_and_normalize_train_data()
-    yfull_test = np.zeros((len(train_data), 8192))
-    
-    print("Train data loaded")
-    
-    activations1 = get_fc1_output([train_data, 0])[0]
-    activations2 = get_fc2_output([train_data, 0])[0]
+            activations = np.concatenate((activations1, activations2), axis=1)
 
-    activations = np.concatenate((activations1, activations2), axis=1)
+            yfull_train[i*batch_size:i*batch_size+len(activations),:] = activations
+            train_ids += train_id
 
-    df = pd.DataFrame(activations)
-    df.loc[:, 'img'] = pd.Series(train_id, index=df.index)
-    
-    df.to_csv("activations_train", index=False)
-    print("Training activations saved")
+
+        df = pd.DataFrame(yfull_train)
+        df.loc[:, 'img'] = pd.Series(train_ids, index=df.index)
+
+        df.to_csv("activations/activations_train_c{}.csv".format(j), index=False)
+        print("Train activations for c{} saved".format(j))
 
 def run_single_test():
     batch_size = 64
@@ -208,8 +202,8 @@ def run_single_test():
     df = pd.DataFrame(yfull_test)
     df.loc[:, 'img'] = pd.Series(test_ids, index=df.index)
     
-    df.to_csv("activations_test", index=False)
+    df.to_csv("activations/activations_test", index=False)
     print("Test activations saved")
     
-#run_single_train()
+run_single_train()
 run_single_test()
