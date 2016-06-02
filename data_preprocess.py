@@ -47,7 +47,7 @@ def load_test(files):
     X_test_id = []
     for fl in files:
         flbase = os.path.basename(fl)
-        img = get_im_skipy(fl, COLOR_TYPE, IMG_SHAPE)
+        img = get_im_skipy(fl)
         X_test.append(img)
         X_test_id.append(flbase)
 
@@ -112,7 +112,6 @@ def read_and_normalize_train_data():
 
     train_data = np.array(train_data)
     train_target = np.array(train_target, dtype=np.uint8)
-    train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
     train_data = train_data.transpose(0, 3, 1, 2)
     #train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
@@ -135,7 +134,6 @@ def read_and_normalize_test_data(batch, batch_num):
         (test_data, test_id) = restore_data(cache_path)
 
     test_data = np.array(test_data, dtype=np.uint8)
-    test_data = test_data.reshape(test_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
     test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 

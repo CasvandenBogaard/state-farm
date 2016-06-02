@@ -39,21 +39,22 @@ def unpickle(file):
     return dict
 
 def load_data():
-    X_train, Y_train, train_index = dp.get_train_data()
-
-    print(X_train.shape)
-
-
-    return dict(
-        X_train = lasagne.utils.floatX(X_train),
-        Y_train = Y_train.astype('int32')
-    )
-
+    print("no loading")
+    # X_train, Y_train, train_index = dp.get_train_data()
+    #
+    # print(X_train.shape)
+    #
+    #
     # return dict(
-    #     X_train=lasagne.utils.floatX(X_train),
-    #     Y_train=Y_train.astype('int32'),
-    #     X_test = lasagne.utils.floatX(X_test),
-    #     Y_test = Y_test.astype('int32'),)
+    #     X_train = lasagne.utils.floatX(X_train),
+    #     Y_train = Y_train.astype('int32')
+    # )
+    #
+    # # return dict(
+    # #     X_train=lasagne.utils.floatX(X_train),
+    # #     Y_train=Y_train.astype('int32'),
+    # #     X_test = lasagne.utils.floatX(X_test),
+    # #     Y_test = Y_test.astype('int32'),)
 
 def create_submission(predictions, test_id, info):
     result1 = pd.DataFrame(predictions, columns=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'])
@@ -115,7 +116,7 @@ def build_cnn(input_var=None, n=5):
 
     # first layer, output is 16 x 32 x 32
     l = batch_norm(ConvLayer(l_in, num_filters=16, filter_size=(3,3), stride=(1,1), nonlinearity=rectify, pad='same', W=lasagne.init.HeNormal(gain='relu'), flip_filters=False))
-    
+
     # first stack of residual blocks, output is 16 x 32 x 32
     for _ in range(n):
         l = residual_block(l)
@@ -129,7 +130,7 @@ def build_cnn(input_var=None, n=5):
     l = residual_block(l, increase_dim=True)
     for _ in range(1,n):
         l = residual_block(l)
-    
+
     # average pooling
     l = GlobalPoolLayer(l)
 
@@ -154,7 +155,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
         else:
             excerpt = slice(start_idx, start_idx + batchsize)
         if augment:
-            # as in paper : 
+            # as in paper :
             # pad feature arrays with 4 pixels on each side
             # and do random cropping of 32x32
             padded = np.pad(inputs[excerpt],((0,0),(0,0),(4,4),(4,4)),mode='constant')
@@ -175,8 +176,8 @@ def main(n=5, num_epochs=82, model=None):
     print("Loading data...")
     data = load_data()
 
-    X_train = data['X_train']
-    Y_train = data['Y_train']
+    # X_train = data['X_train']
+    # Y_train = data['Y_train']
     # X_test = data['X_test']
     # Y_test = data['Y_test']
 
@@ -189,7 +190,7 @@ def main(n=5, num_epochs=82, model=None):
     print("Building model and compiling functions...")
     network = build_cnn(input_var, n)
     print("number of parameters in model: %d" % lasagne.layers.count_params(network, trainable=True))
-    
+
     if model is None:
         # Create a loss expression for training, i.e., a scalar objective we want
         # to minimize (for our multi-class problem, it is the cross-entropy loss):
@@ -212,7 +213,7 @@ def main(n=5, num_epochs=82, model=None):
         print("updates")
         updates = lasagne.updates.momentum(
                 loss, params, learning_rate=sh_lr, momentum=0.9)
-        
+
         # Compile a function performing a training step on a mini-batch (by giving
         # the updates dictionary) and returning the corresponding training loss:
         print("function")
@@ -314,7 +315,7 @@ def main(n=5, num_epochs=82, model=None):
 
     for i, batch in enumerate(batches):
         test_data, test_id = dp.read_and_normalize_test_data(batch, i)
-        scores = test_fn(test_data)
+        scores = test_fn(lasagne.utils.floatX(test_data))
         print(scores)
         yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
         test_ids += test_id
