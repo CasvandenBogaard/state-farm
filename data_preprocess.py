@@ -13,7 +13,7 @@ from sklearn.cross_validation import train_test_split
 
 
 
-USE_CACHE = 1
+USE_CACHE = 0
 # color type: 1 - grey, 3 - rgb
 
 COLOR_TYPE = 3
@@ -61,9 +61,6 @@ def load_train():
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
-            if cnt > 100:
-                break
-            cnt += 1
     unique_drivers = sorted(list(set(driver_id)))
     print('Unique drivers: {}'.format(len(unique_drivers)))
     print(unique_drivers)
@@ -158,7 +155,7 @@ def get_train_data():
                      'p050', 'p051', 'p052', 'p056', 'p061', 'p064', 'p066', 'p072',
                      'p075']
     X_train, Y_train, train_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_train)
-    #print(X_train)
+    print(X_train.shape)
     unique_list_valid = ['p081']
     X_valid, Y_valid, test_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_valid)
     return X_train, Y_train, train_index
