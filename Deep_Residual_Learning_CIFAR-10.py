@@ -284,15 +284,12 @@ def main(n=5, num_epochs=82, model=None):
     print(X_train.shape)
     print(Y_train.shape)
     index = 0
-    for batch in iterate_minibatches(X_train, Y_train, 100, shuffle=False):
+    for batch in iterate_minibatches(X_train, Y_train, 500, shuffle=False):
         inputs, targets = batch
         err, acc = val_fn(inputs, targets)
         test_err += err
         test_acc += acc
         test_batches += 1
-        print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-        print("  test accuracy:\t\t{:.2f} %".format(
-            test_acc / test_batches * 100))
     print("Final results:")
     print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
     print("  test accuracy:\t\t{:.2f} %".format(
@@ -315,4 +312,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(5,100,None)
+        main(5,5000,None)
