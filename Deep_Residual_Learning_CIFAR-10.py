@@ -253,8 +253,6 @@ def main(n=5, num_epochs=82, model=None):
             start_time = time.time()
             for batch in iterate_minibatches(X_train, Y_train, 128, shuffle=True, augment=True):
                 inputs, targets = batch
-                print(test_fn(inputs))
-                print(targets)
 
                 train_err += train_fn(inputs, targets)
                 train_batches += 1
@@ -289,6 +287,7 @@ def main(n=5, num_epochs=82, model=None):
         np.savez('cifar10_deep_residual_model.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
+        print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
         print("load params..")
         with np.load(model) as f:
              param_values = [f['arr_%d' % i] for i in range(len(f.files))]
@@ -349,4 +348,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(5,30)
+        main(5,30,"cifar10_deep_residual_model.npz")
