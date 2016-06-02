@@ -176,10 +176,10 @@ def main(n=5, num_epochs=82, model=None):
     print("Loading data...")
     data = load_data()
 
-    # X_train = data['X_train']
-    # Y_train = data['Y_train']
-    # X_test = data['X_test']
-    # Y_test = data['Y_test']
+    X_train = data['X_train']
+    Y_train = data['Y_train']
+    X_test = data['X_test']
+    Y_test = data['Y_test']
 
     # Prepare Theano variables for inputs and targets
 
@@ -224,6 +224,7 @@ def main(n=5, num_epochs=82, model=None):
     test_prediction = lasagne.layers.get_output(network, deterministic=True)
     test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
                                                             target_var)
+
     test_loss = test_loss.mean()
     test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
                       dtype=theano.config.floatX)
@@ -252,6 +253,9 @@ def main(n=5, num_epochs=82, model=None):
             start_time = time.time()
             for batch in iterate_minibatches(X_train, Y_train, 128, shuffle=True, augment=True):
                 inputs, targets = batch
+                print(test_fn(inputs))
+                print(targets)
+
                 train_err += train_fn(inputs, targets)
                 train_batches += 1
 
@@ -345,4 +349,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(5,30,"cifar10_deep_residual_model.npz")
+        main(5,30,None)
