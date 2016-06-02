@@ -194,14 +194,18 @@ def main(n=5, num_epochs=82, model=None):
         print("create update expression")
         # Create update expressions for training
         # Stochastic Gradient Descent (SGD) with momentum
+        print("params")
         params = lasagne.layers.get_all_params(network, trainable=True)
         lr = 0.1
+        print("theanoshared")
         sh_lr = theano.shared(lasagne.utils.floatX(lr))
+        print("updates")
         updates = lasagne.updates.momentum(
                 loss, params, learning_rate=sh_lr, momentum=0.9)
         
         # Compile a function performing a training step on a mini-batch (by giving
         # the updates dictionary) and returning the corresponding training loss:
+        print("function")
         train_fn = theano.function([input_var, target_var], loss, updates=updates)
 
     print("create loss expression")
@@ -232,10 +236,9 @@ def main(n=5, num_epochs=82, model=None):
             train_err = 0
             train_batches = 0
             start_time = time.time()
-            for batch in iterate_minibatches(X_train, Y_train, 10, shuffle=True, augment=True):
+            for batch in iterate_minibatches(X_train, Y_train, 128, shuffle=True, augment=True):
                 inputs, targets = batch
                 train_err += train_fn(inputs, targets)
-                print(train_err/(train_batches+1))
                 train_batches += 1
 
             # # And a full pass over the validation data:
@@ -281,15 +284,12 @@ def main(n=5, num_epochs=82, model=None):
     print(X_train.shape)
     print(Y_train.shape)
     index = 0
-    for batch in iterate_minibatches(X_train, Y_train, 100, shuffle=False):
+    for batch in iterate_minibatches(X_train, Y_train, 500, shuffle=False):
         inputs, targets = batch
         err, acc = val_fn(inputs, targets)
         test_err += err
         test_acc += acc
         test_batches += 1
-        print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-        print("  test accuracy:\t\t{:.2f} %".format(
-            test_acc / test_batches * 100))
     print("Final results:")
     print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
     print("  test accuracy:\t\t{:.2f} %".format(
@@ -312,4 +312,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(5,2,None)
+        main(5,30,None)
