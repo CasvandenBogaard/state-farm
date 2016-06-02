@@ -40,21 +40,21 @@ def unpickle(file):
 
 def load_data():
     print("no loading")
-    # X_train, Y_train, train_index = dp.get_train_data()
-    #
-    # print(X_train.shape)
-    #
-    #
+    X_train, Y_train, train_index = dp.get_train_data()
+
+    print(X_train.shape)
+
+
+    return dict(
+        X_train = lasagne.utils.floatX(X_train),
+        Y_train = Y_train.astype('int32')
+    )
+
     # return dict(
-    #     X_train = lasagne.utils.floatX(X_train),
-    #     Y_train = Y_train.astype('int32')
-    # )
-    #
-    # # return dict(
-    # #     X_train=lasagne.utils.floatX(X_train),
-    # #     Y_train=Y_train.astype('int32'),
-    # #     X_test = lasagne.utils.floatX(X_test),
-    # #     Y_test = Y_test.astype('int32'),)
+    #     X_train=lasagne.utils.floatX(X_train),
+    #     Y_train=Y_train.astype('int32'),
+    #     X_test = lasagne.utils.floatX(X_test),
+    #     Y_test = Y_test.astype('int32'),)
 
 def create_submission(predictions, test_id, info):
     result1 = pd.DataFrame(predictions, columns=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'])
