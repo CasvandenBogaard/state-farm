@@ -51,11 +51,12 @@ def read_and_normalize_test_data(batch, batch_num):
 
     test_data = np.array(test_data, dtype=np.uint8)
     test_data = test_data.reshape(test_data.shape[0], COLOR_TYPE, IMG_SHAPE[0], IMG_SHAPE[1])
+    test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 
     mean_pixel = [103.939, 116.779, 123.68]
     for c in range(3):
-        test_data[:, c, :, :] = (test_data[:, c, :, :] - mean_pixel[c])/255
+        test_data[:, c, :, :] = (test_data[:, c, :, :] - mean_pixel[c])
 
     print('Test shape:', test_data.shape)
     print(test_data.shape[0], 'test samples')
@@ -75,7 +76,7 @@ def run_single():
 
     batches, total = generate_test_batches(batch_size)
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.load_weights(os.path.join('cache', 'vgg16_weights.h5'))
+    model.load_weights(os.path.join('cache', 'resnet_weights.h5'))
 
     test_ids = []
     yfull_test = np.zeros((total, 10))

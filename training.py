@@ -11,6 +11,9 @@ from sklearn.metrics import log_loss
 from models.vgg import vgg16_adaptation
 from tools import get_im_skipy, cache_data, restore_data
 
+from numpy.random import permutation
+import numpy as np
+
 USE_CACHE = False
 # color type: 1 - grey, 3 - rgb
 COLOR_TYPE = 3
@@ -47,7 +50,7 @@ def load_train():
         files = glob.glob(path)
         for fl in files:
             flbase = os.path.basename(fl)
-            img = get_im_skipy(fl)
+            img = get_im_skipy(fl, COLOR_TYPE, IMG_SHAPE)
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
@@ -76,13 +79,17 @@ def read_and_normalize_train_data():
     train_data = np.array(train_data, dtype=np.uint8)
     train_target = np.array(train_target, dtype=np.uint8)
     train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    train_data = train_data.transpose(0, 3, 1, 2)
+    train_data = train_data.transpose((0, 3, 1, 2))
     train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
 
     mean_pixel = [103.939, 116.779, 123.68]
     for c in range(3):
-        train_data[:, c, :, :] = (train_data[:, c, :, :] - mean_pixel[c])/255
+        train_data[:, c, :, :] = (train_data[:, c, :, :] - mean_pixel[c])
+
+    perm = permutation(len(train_target))
+    train_data = train_data[perm]
+    train_target = train_target[perm]
 
     print('Train shape:', train_data.shape)
     print(train_data.shape[0], 'train samples')
@@ -128,17 +135,17 @@ def run_single():
     print('Start Single Run')
     print('Split train: ', len(X_train), len(Y_train))
     print('Split valid: ', len(X_valid), len(Y_valid))
-    print('Train drivers: ', unique_list_train)
-    print('Test drivers: ', unique_list_valid)
+    print('Train drivers: ', train_drivers)
+    print('Test drivers: ', test_drivers)
 
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
-              show_accuracy=True, verbose=1, validation_data=(X_valid, Y_valid))
+    model.fit(X_train, Y_train, batch_size=batch_size,
+              nb_epoch=nb_epoch, verbose=1, validation_data=(X_valid, Y_valid), shuffle=True)
 
     predictions_valid = model.predict(X_valid, batch_size=64, verbose=1)
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
 
-    model.save_weights(os.path.join('cache', 'vgg16_weights.h5'), True)
+    model.save_weights(os.path.join('cache', 'resnet_weights.h5'), True)
 
 run_single()
