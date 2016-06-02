@@ -178,8 +178,8 @@ def main(n=5, num_epochs=82, model=None):
 
     X_train = data['X_train']
     Y_train = data['Y_train']
-    X_test = data['X_test']
-    Y_test = data['Y_test']
+    # X_test = data['X_test']
+    # Y_test = data['Y_test']
 
     # Prepare Theano variables for inputs and targets
 
