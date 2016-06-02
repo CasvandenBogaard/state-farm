@@ -101,13 +101,9 @@ def read_and_normalize_train_data():
         print('Restore train from cache!')
         (train_data, train_target, driver_id, unique_drivers) = restore_data(cache_path)
 
-    print(train_data[0])
     train_data = np.array(train_data)
-    print(train_data[0])
     train_target = np.array(train_target, dtype=np.uint8)
-    print(train_target)
     train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    print(train_data[0])
     train_data = train_data.transpose(0, 3, 1, 2)
     #train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
