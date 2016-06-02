@@ -3,6 +3,7 @@ import numpy as np
 import os
 import glob
 import pickle
+import sys
 
 from sklearn.cross_validation import train_test_split
 from keras.utils import np_utils
@@ -19,6 +20,7 @@ USE_CACHE = False
 COLOR_TYPE = 3
 IMG_SHAPE = (224, 224)
 
+TRAIN_NUM = sys.argv[1]
 
 def get_driver_data():
     dr = dict()
@@ -78,7 +80,6 @@ def read_and_normalize_train_data():
 
     train_data = np.array(train_data, dtype=np.uint8)
     train_target = np.array(train_target, dtype=np.uint8)
-    train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
     train_data = train_data.transpose((0, 3, 1, 2))
     train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
@@ -112,7 +113,7 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
 
 def split_drivers(driver_list):
     n = len(driver_list)
-    test_indices = list(np.random.choice(range(n), n//10, replace=False))
+    test_indices = list(np.random.choice(range(n), n//5, replace=False))
 
     test = [driver_list[i] for i in test_indices]
     train =[driver_list[i] for i in range(n) if i not in test_indices]
@@ -146,6 +147,6 @@ def run_single():
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
 
-    model.save_weights(os.path.join('cache', 'resnet_weights.h5'), True)
+    model.save_weights(os.path.join('cache', 'vgg_adaptation_weights_{}.h5'.format(TRAIN_NUM)), True)
 
 run_single()

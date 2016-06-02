@@ -13,7 +13,7 @@ from sklearn.cross_validation import train_test_split
 
 
 
-USE_CACHE = 1
+USE_CACHE = 0
 # color type: 1 - grey, 3 - rgb
 
 COLOR_TYPE = 3
@@ -42,6 +42,18 @@ def get_driver_data():
     return dr
 
 
+def load_test(files):
+    X_test = []
+    X_test_id = []
+    for fl in files:
+        flbase = os.path.basename(fl)
+        img = get_im_skipy(fl)
+        X_test.append(img)
+        X_test_id.append(flbase)
+
+    return X_test, X_test_id
+
+
 def load_train():
     X_train = []
     y_train = []
@@ -61,9 +73,6 @@ def load_train():
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
-            if cnt > 100:
-                break
-            cnt += 1
     unique_drivers = sorted(list(set(driver_id)))
     print('Unique drivers: {}'.format(len(unique_drivers)))
     print(unique_drivers)
@@ -103,7 +112,6 @@ def read_and_normalize_train_data():
 
     train_data = np.array(train_data)
     train_target = np.array(train_target, dtype=np.uint8)
-    train_data = train_data.reshape(train_data.shape[0], IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
     train_data = train_data.transpose(0, 3, 1, 2)
     #train_target = np_utils.to_categorical(train_target, 10)
     train_data = train_data.astype('float32')
@@ -113,6 +121,27 @@ def read_and_normalize_train_data():
     print(train_data.shape[0], 'train samples')
     return train_data, train_target, driver_id, unique_drivers
 
+def read_and_normalize_test_data(batch, batch_num):
+    print("Reading test batch {}".format(batch_num))
+
+    cache_path = os.path.join('cache', 'test_{}x{}_t{}_b{}.dat'.format(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE, batch_num))
+
+    if not os.path.isfile(cache_path) or not USE_CACHE:
+        test_data, test_id = load_test(batch)
+        cache_data((test_data, test_id), cache_path)
+    else:
+        print('Restore test from cache!')
+        (test_data, test_id) = restore_data(cache_path)
+
+    test_data = np.array(test_data)
+    test_data = test_data.transpose((0, 3, 1, 2))
+    test_data = test_data.astype('float32')
+
+    test_data /= 255
+
+    print('Test shape:', test_data.shape)
+    print(test_data.shape[0], 'test samples')
+    return test_data, test_id
 
 def dict_to_list(d):
     ret = []
@@ -136,6 +165,14 @@ def merge_several_folds_geom(data, nfolds):
     a = np.power(a, 1/nfolds)
     return a.tolist()
 
+def generate_test_batches(size):
+    path = os.path.join('data', 'imgs', 'test', '*.jpg')
+    files = glob.glob(path)
+
+    batches = [files[i:i+size] for i in range(0, len(files), size)]
+    return batches, len(files)
+
+
 
 def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
     data = []
@@ -158,7 +195,7 @@ def get_train_data():
                      'p050', 'p051', 'p052', 'p056', 'p061', 'p064', 'p066', 'p072',
                      'p075']
     X_train, Y_train, train_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_train)
-    #print(X_train)
+    print(X_train.shape)
     unique_list_valid = ['p081']
     X_valid, Y_valid, test_index = copy_selected_drivers(train_data, train_target, driver_id, unique_list_valid)
     return X_train, Y_train, train_index
