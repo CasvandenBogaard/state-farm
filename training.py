@@ -11,6 +11,7 @@ from sklearn.metrics import log_loss
 
 from models.vgg import vgg16_adaptation
 from tools import get_im_skipy, cache_data, restore_data
+from keras.preprocessing.image import ImageDataGenerator
 
 from numpy.random import permutation
 import numpy as np
@@ -139,9 +140,16 @@ def run_single():
     print('Train drivers: ', train_drivers)
     print('Test drivers: ', test_drivers)
 
+    augmentationgenerator = ImageDataGenerator(
+        rotation_range=4,
+        width_shift_range=0.1,
+        height_shift_range=0.1,
+        zoom_range=0.05,
+    )
+
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.fit(X_train, Y_train, batch_size=batch_size,
-              nb_epoch=nb_epoch, verbose=1, validation_data=(X_valid, Y_valid), shuffle=True)
+    model.fit_generator(augmentationgenerator.flow(X_train, Y_train, batch_size=batch_size),
+              nb_epoch=nb_epoch, verbose=1, samples_per_epoch=len(X_train), validation_data=(X_valid, Y_valid))
 
     predictions_valid = model.predict(X_valid, batch_size=64, verbose=1)
     score = log_loss(Y_valid, predictions_valid)
