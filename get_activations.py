@@ -138,7 +138,7 @@ def generate_train_batches(j, size):
 
 
 def run_single_train():
-    batch_size = 2
+    batch_size = 64
 
     print "training with batch size " + str(batch_size)
 
@@ -202,7 +202,7 @@ def run_single_test():
     df = pd.DataFrame(yfull_test)
     df.loc[:, 'img'] = pd.Series(test_ids, index=df.index)
     
-    df.to_csv("activations/activations_test", index=False)
+    df.to_csv("activations/activations_test.csv", index=False)
     print("Test activations saved")
     
 run_single_train()
