@@ -174,10 +174,10 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
 def main(n=5, num_epochs=82, model=None):
     # Load the dataset
     print("Loading data...")
-    # data = load_data()
-    #
-    # X_train = data['X_train']
-    # Y_train = data['Y_train']
+    data = load_data()
+
+    X_train = data['X_train']
+    Y_train = data['Y_train']
     # X_test = data['X_test']
     # Y_test = data['Y_test']
 
