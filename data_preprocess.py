@@ -133,7 +133,7 @@ def read_and_normalize_test_data(batch, batch_num):
         print('Restore test from cache!')
         (test_data, test_id) = restore_data(cache_path)
 
-    test_data = np.array(test_data)
+    test_data = np.array(test_data, dtype=np.uint8)
     test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 
