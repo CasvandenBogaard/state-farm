@@ -66,44 +66,7 @@ unique_drivers = list(set(driver_id))
 
 test_data = pd.read_csv('activations/activations_test.csv'.format(i))
 test_imgs = test_data['img'].values
-
-
-#KFold split on drivers
-K = 10
-kf = cross_validation.LabelKFold(unique_drivers, n_folds=K)
-splits = []
-for train_index, test_index in kf:
-    train_drivers = np.array(unique_drivers)[train_index]
-    test_drivers = np.array(unique_drivers)[test_index]
-    splits.append((list(train_drivers),list(test_drivers)))
-
-
-avg_loss = 0
-for pair in splits:
-    train_drivers = pair[0]
-    test_drivers = pair[1]
-    
-    train_indices = [i for i,x in enumerate(list(driver_id)) if x in train_drivers]
-    test_indices = [i for i,x in enumerate(list(driver_id)) if x in test_drivers]
-    
-    print train_indices
-    
-    train_x = data.iloc[train_indices, 0:8192]
-    train_y = data['label'].iloc[train_indices]
-    test_x = data.iloc[test_indices, 0:8192]
-    test_y = data['label'].iloc[test_indices]
-    
-    clf = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-    clf.fit(train_x, train_y)
-    predicted_y = clf.predict_proba(test_x)
-    loss = log_loss(test_y, predicted_y)
-    avg_loss += loss
-    print "Log-loss: " + str(loss)
-
-final_loss = avg_loss/K
-print "Average logg-loss: " + str(final_loss)
-
-
+test_data = test_data.drop('img', 1)
 
 np.random.seed(0) # seed to shuffle the train set
 verbose = True
@@ -148,7 +111,7 @@ for j, clf in enumerate(clfs):
         y_submission = clf.predict(X_test)
         print y_submission.shape
         dataset_blend_train[test_indices, j] = y_submission
-        dataset_blend_test_j[:, i] = clf.predict(X_submission)
+        dataset_blend_test_j[:, i] = clf.predict(test_data)
     dataset_blend_test[:,j] = dataset_blend_test_j.mean(1)
     
 
