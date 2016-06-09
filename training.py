@@ -12,14 +12,18 @@ from sklearn.metrics import log_loss
 from models.vgg import vgg16_adaptation
 from tools import get_im_skipy, cache_data, restore_data
 from keras.preprocessing.image import ImageDataGenerator
+from scipy.misc import imresize
 
 from numpy.random import permutation
+from random import randrange
 import numpy as np
 
 USE_CACHE = False
 # color type: 1 - grey, 3 - rgb
 COLOR_TYPE = 3
-IMG_SHAPE = (224, 224)
+IMG_SHAPE = (246, 328)
+VALID_SHAPE = (224, 298)
+NETWORK_IMG_SHAPE = (224, 224)
 
 TRAIN_NUM = sys.argv[1]
 
@@ -62,12 +66,6 @@ def load_train():
     print('Unique drivers: {}'.format(len(unique_drivers)))
     print(unique_drivers)
     return X_train, y_train, driver_id, unique_drivers
-
-
-def split_validation_set(train, target, test_size):
-    random_state = 51
-    X_train, X_test, y_train, y_test = train_test_split(train, target, test_size=test_size, random_state=random_state)
-    return X_train, X_test, y_train, y_test
 
 
 def read_and_normalize_train_data():
@@ -113,13 +111,92 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
     return data, target, index
 
 def split_drivers(driver_list):
-    n = len(driver_list)
-    test_indices = list(np.random.choice(range(n), n//5, replace=False))
+    splits = [
+        {'test': ['p056', 'p081', 'p035'],
+         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049',
+                   'p051', 'p052', 'p061', 'p064', 'p066', 'p072', 'p075', 'p050', 'p026', 'p047', 'p045']},
+        {'test': ['p039', 'p061', 'p075'],
+         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p041', 'p042', 'p049', 'p051',
+                   'p052', 'p056', 'p064', 'p066', 'p072', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
+        {'test': ['p012', 'p041', 'p064'],
+         'train': ['p002', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p042', 'p049', 'p051', 'p052',
+                   'p056', 'p061', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
+        {'test': ['p014', 'p042', 'p066'],
+         'train': ['p002', 'p012', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p049', 'p051', 'p052',
+                   'p056', 'p061', 'p064', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
+        {'test': ['p015', 'p072', 'p045'],
+         'train': ['p002', 'p012', 'p014', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051',
+                   'p052', 'p056', 'p061', 'p064', 'p066', 'p075', 'p081', 'p050', 'p026', 'p047', 'p035']},
+        {'test': ['p002', 'p016', 'p047'],
+         'train': ['p012', 'p014', 'p015', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051', 'p052',
+                   'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p045', 'p035']},
+        {'test': ['p021', 'p049'],
+         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p022', 'p024', 'p039', 'p041', 'p042', 'p051', 'p052',
+                   'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
+        {'test': ['p022', 'p050'],
+         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051',
+                   'p052', 'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p026', 'p047', 'p045', 'p035']},
+        {'test': ['p024', 'p051'],
+         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p039', 'p041', 'p042', 'p049', 'p052',
+                   'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
+        {'test': ['p052', 'p026'],
+         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049',
+                   'p051', 'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p047', 'p045', 'p035']}
+    ]
 
-    test = [driver_list[i] for i in test_indices]
-    train =[driver_list[i] for i in range(n) if i not in test_indices]
-    
+    split = splits[int(TRAIN_NUM)]
+
+    train = split['train']
+    test = split['test']
+
     return train, test
+
+def cropping_generator(flow):
+
+    while 1:
+        X, Y = flow.next()
+
+        result = np.zeros((len(X), COLOR_TYPE, NETWORK_IMG_SHAPE[0], NETWORK_IMG_SHAPE[1]))
+        for i in range(len(X)):
+            x = X[i]
+            x = x[:,11:IMG_SHAPE[0]-11,:]
+
+            cropping = randrange(0,3)
+            if cropping == 0: # Left
+                x = x[:, :, 0:NETWORK_IMG_SHAPE[1]]
+            if cropping == 1: # Middle
+                x = x[:, :, (IMG_SHAPE[1]-NETWORK_IMG_SHAPE[1])//2:(IMG_SHAPE[1]+NETWORK_IMG_SHAPE[1])//2]
+            if cropping == 2: # Right
+                x = x[:, :, (IMG_SHAPE[1]-NETWORK_IMG_SHAPE[1]):IMG_SHAPE[1]]
+
+            result[i] = x
+
+        yield (result, Y)
+
+def validation_generator(X_valid, Y_valid, ignore_y=False):
+    batch_size = 64
+    index = 0
+
+    max_index = len(X_valid)
+
+    while 1:
+        X_batch, Y_batch = X_valid[index:index+batch_size], Y_valid[index:index+batch_size]
+
+        result = np.zeros((len(X_batch), COLOR_TYPE, NETWORK_IMG_SHAPE[0], NETWORK_IMG_SHAPE[1]))
+        for i in range(len(X_batch)):
+            x = X_batch[i]
+            x = imresize(x, VALID_SHAPE).transpose((2,0,1))
+
+            result[i] = x[:,:,(VALID_SHAPE[1]-NETWORK_IMG_SHAPE[1])//2:(VALID_SHAPE[1]+NETWORK_IMG_SHAPE[1])//2]
+
+        index += batch_size
+        if index > max_index:
+            index = 0
+
+        if (ignore_y):
+            yield result
+        else:
+            yield (result, Y_batch)
 
 
 def run_single():
@@ -141,20 +218,21 @@ def run_single():
     print('Test drivers: ', test_drivers)
 
     augmentationgenerator = ImageDataGenerator(
-        rotation_range=4,
-        width_shift_range=0.1,
+        rotation_range=5,
         height_shift_range=0.1,
         zoom_range=0.05,
     )
+    augflow = augmentationgenerator.flow(X_train, Y_train, batch_size=batch_size)
 
-    model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.fit_generator(augmentationgenerator.flow(X_train, Y_train, batch_size=batch_size),
-              nb_epoch=nb_epoch, verbose=1, samples_per_epoch=len(X_train), validation_data=(X_valid, Y_valid))
 
-    predictions_valid = model.predict(X_valid, batch_size=64, verbose=1)
+    model = vgg16_adaptation(NETWORK_IMG_SHAPE[0], NETWORK_IMG_SHAPE[1], COLOR_TYPE)
+    model.fit_generator(cropping_generator(augflow), nb_epoch=nb_epoch, verbose=1, samples_per_epoch=len(X_train),
+                        nb_val_samples=len(Y_valid), validation_data=validation_generator(X_valid, Y_valid))
+
+    predictions_valid = model.predict_generator(validation_generator(X_valid, Y_valid, ignore_y=True), len(Y_valid))
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
 
-    model.save_weights(os.path.join('cache', 'vgg_adaptation_weights_{}.h5'.format(TRAIN_NUM)), True)
+    model.save_weights(os.path.join('cache', 'vgg16_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)), True)
 
 run_single()
