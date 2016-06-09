@@ -8,11 +8,13 @@ import sys
 
 from models.vgg import vgg16_adaptation
 from tools import get_im_skipy, cache_data, restore_data
+from itertools import izip
 
 USE_CACHE = False
 # color type: 1 - grey, 3 - rgb
 COLOR_TYPE = 3
-IMG_SHAPE = (224, 224)
+IMG_SHAPE = (224, 298)
+NETWORK_IMG_SHAPE = (224, 224)
 
 TRAIN_NUM = sys.argv[1]
 
@@ -71,13 +73,26 @@ def generate_test_batches(size):
     batches = [files[i:i+size] for i in range(0, len(files), size)]
     return batches, len(files)
 
+def crop(data):
+    result = np.zeros((len(data)*3, COLOR_TYPE, NETWORK_IMG_SHAPE[0], NETWORK_IMG_SHAPE[1]))
+    for i in range(len(data)):
+        x = data[i]
+        x1 = x[:, :, 0:NETWORK_IMG_SHAPE[1]]
+        x2 = x[:, :, (IMG_SHAPE[1]-NETWORK_IMG_SHAPE[1])//2:(IMG_SHAPE[1]+NETWORK_IMG_SHAPE[1])//2]
+        x3 = x[:, :, (IMG_SHAPE[1]-NETWORK_IMG_SHAPE[1]):IMG_SHAPE[1]]
+
+        result[i*3] = x1
+        result[i*3+1] = x2
+        result[i*3+2] = x3
+
+    return result
 
 def run_single():
-    batch_size = 5000
+    batch_size = 512
 
     batches, total = generate_test_batches(batch_size)
     model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.load_weights(os.path.join('cache', 'vgg_adaptation_weights_{}.h5'.format(TRAIN_NUM)))
+    model.load_weights(os.path.join('cache', 'vgg16_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)))
 
     test_ids = []
     yfull_test = np.zeros((total, 10))
@@ -85,13 +100,16 @@ def run_single():
 
     for i, batch in enumerate(batches):
         test_data, test_id = read_and_normalize_test_data(batch, i)
-        result = model.predict(test_data, verbose=1, batch_size=128)
+
+        test_data = crop(test_data)
+        result = np.array(model.predict(test_data, verbose=1, batch_size=64))
+        result = [np.average(result[i:i+3], axis=0) for i in xrange(0, len(result), 3)]
 
         yfull_test[i*batch_size:i*batch_size+len(result),:] = result
         test_ids += test_id
 
 
-    info_string = 'loss_r_' + str(IMG_SHAPE[0]) + '_c_' + str(IMG_SHAPE[1])
+    info_string = str(IMG_SHAPE[0]) + '_c_' + str(IMG_SHAPE[1])
 
     create_submission(yfull_test, test_ids, info_string)
 

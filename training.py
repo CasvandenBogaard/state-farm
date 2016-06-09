@@ -233,6 +233,6 @@ def run_single():
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
 
-    model.save_weights(os.path.join('cache', 'vgg_adaptation_weights_{}.h5'.format(TRAIN_NUM)), True)
+    model.save_weights(os.path.join('cache', 'vgg16_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)), True)
 
 run_single()
