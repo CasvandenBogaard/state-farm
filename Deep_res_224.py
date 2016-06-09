@@ -295,7 +295,7 @@ def main(n=5, num_epochs=82, model=None):
         lasagne.layers.set_all_param_values(network, param_values)
 
     print("testing..")
-    batch_size = 5000
+    batch_size = 64
     batches, total = dp.generate_test_batches(batch_size)
     test_ids = []
     yfull_test = np.zeros((total, 10))
@@ -304,8 +304,6 @@ def main(n=5, num_epochs=82, model=None):
         test_data, test_id = dp.read_and_normalize_test_data(batch, i)
         scores = test_fn(lasagne.utils.floatX(test_data))
         print(scores[0])
-        print(scores[1])
-        print(scores[2])
         yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
         test_ids += test_id
 
