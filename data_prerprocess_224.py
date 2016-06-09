@@ -13,11 +13,11 @@ from sklearn.cross_validation import train_test_split
 
 
 
-USE_CACHE = 1
+USE_CACHE = 0
 # color type: 1 - grey, 3 - rgb
 
 COLOR_TYPE = 3
-IMG_SHAPE = (32, 32)
+IMG_SHAPE = (224, 224)
 
 # color_type = 1 - gray
 # color_type = 3 - RGB
@@ -62,7 +62,7 @@ def load_train():
     driver_data = get_driver_data()
 
     print('Read train images')
-    for j in range(10):
+    for j in range(1):
         print('Load folder c{}'.format(j))
         path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
         files = glob.glob(path)
@@ -73,6 +73,7 @@ def load_train():
             X_train.append(img)
             y_train.append(j)
             driver_id.append(driver_data[flbase])
+            cnt += 1
     unique_drivers = sorted(list(set(driver_id)))
     print('Unique drivers: {}'.format(len(unique_drivers)))
     print(unique_drivers)

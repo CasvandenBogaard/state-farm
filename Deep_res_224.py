@@ -3,7 +3,7 @@
 """
 Lasagne implementation of CIFAR-10 examples from "Deep Residual Learning for Image Recognition" (http://arxiv.org/abs/1512.03385)
 
-Check the accompanying files for pretrained models. The 32-layer network (n=5), achieves a validation error of 7.42%, 
+Check the accompanying files for pretrained models. The 32-layer network (n=5), achieves a validation error of 7.42%,
 while the 56-layer network (n=9) achieves error of 6.75%, which is roughly equivalent to the examples in the paper.
 """
 
@@ -21,7 +21,7 @@ import numpy as np
 import theano.tensor as T
 import theano
 import lasagne
-import data_preprocess as dp
+import data_prerprocess_224 as dp
 import pandas as pd
 
 # for the larger networks (n>=9), we need to adjust pythons recursion limit
@@ -112,7 +112,7 @@ def build_cnn(input_var=None, n=5):
         return block
 
     # Building the network
-    l_in = InputLayer(shape=(None, 3, 32, 32), input_var=input_var)
+    l_in = InputLayer(shape=(None, 3, 224, 224), input_var=input_var)
 
     # first layer, output is 16 x 32 x 32
     l = batch_norm(ConvLayer(l_in, num_filters=16, filter_size=(3,3), stride=(1,1), nonlinearity=rectify, pad='same', W=lasagne.init.HeNormal(gain='relu'), flip_filters=False))
@@ -162,7 +162,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
             random_cropped = np.zeros(inputs[excerpt].shape, dtype=np.float32)
             crops = np.random.random_integers(0,high=8,size=(batchsize,2))
             for r in range(batchsize):
-                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+32),crops[r,1]:(crops[r,1]+32)]
+                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+224),crops[r,1]:(crops[r,1]+224)]
             inp_exc = random_cropped
         else:
             inp_exc = inputs[excerpt]
@@ -174,10 +174,10 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
 def main(n=5, num_epochs=82, model=None):
     # Load the dataset
     print("Loading data...")
-    data = load_data()
-
-    X_train = data['X_train']
-    Y_train = data['Y_train']
+    # data = load_data()
+    #
+    # X_train = data['X_train']
+    # Y_train = data['Y_train']
     # X_test = data['X_test']
     # Y_test = data['Y_test']
 
@@ -236,7 +236,7 @@ def main(n=5, num_epochs=82, model=None):
     print("compile test function")
     test_fn = theano.function([input_var], test_prediction)
 
-    if model == None:
+    if model==None:
         # # launch the training loop
         print("Starting training...")
         #We iterate over epochs:
@@ -252,7 +252,7 @@ def main(n=5, num_epochs=82, model=None):
             train_err = 0
             train_batches = 0
             start_time = time.time()
-            for batch in iterate_minibatches(X_train, Y_train, 128, shuffle=True, augment=True):
+            for batch in iterate_minibatches(X_train, Y_train, 1, shuffle=True, augment=True):
                 inputs, targets = batch
 
                 train_err += train_fn(inputs, targets)
@@ -285,7 +285,7 @@ def main(n=5, num_epochs=82, model=None):
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
         # dump the network weights to a file :
-        np.savez('cifar10_deep_residual_model.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('cifar10_deep_residual_model_224.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
@@ -295,7 +295,7 @@ def main(n=5, num_epochs=82, model=None):
         lasagne.layers.set_all_param_values(network, param_values)
 
     print("testing..")
-    batch_size = 64
+    batch_size = 5000
     batches, total = dp.generate_test_batches(batch_size)
     test_ids = []
     yfull_test = np.zeros((total, 10))
@@ -304,10 +304,12 @@ def main(n=5, num_epochs=82, model=None):
         test_data, test_id = dp.read_and_normalize_test_data(batch, i)
         scores = test_fn(lasagne.utils.floatX(test_data))
         print(scores[0])
+        print(scores[1])
+        print(scores[2])
         yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
         test_ids += test_id
 
-    info_string = 'lasagne' + str(32) + '_c_' + str(32)
+    info_string = 'lasagne' + str(224) + '_c_' + str(224)
 
     create_submission(yfull_test, test_ids, info_string)
 
@@ -329,4 +331,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,50, "cifar10_deep_residual_model.npz")
+        main(9,5, "cifar10_deep_residual_model_224.npz")
