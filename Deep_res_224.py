@@ -21,7 +21,7 @@ import numpy as np
 import theano.tensor as T
 import theano
 import lasagne
-import data_preprocess as dp
+import data_prerprocess_224 as dp
 import pandas as pd
 
 # for the larger networks (n>=9), we need to adjust pythons recursion limit
@@ -288,7 +288,7 @@ def main(n=5, num_epochs=82, model=None):
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
         # dump the network weights to a file :
-        np.savez('cifar10_deep_residual_model.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('cifar10_deep_residual_model_224.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
@@ -313,7 +313,7 @@ def main(n=5, num_epochs=82, model=None):
         yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
         test_ids += test_id
 
-    info_string = 'lasagne' + str(32) + '_c_' + str(32)
+    info_string = 'lasagne' + str(224) + '_c_' + str(224)
 
     create_submission(yfull_test, test_ids, info_string)
 
@@ -335,4 +335,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,50, "cifar_model_n9.npz")
+        main(9,20, "cifar_model_n9.npz")
