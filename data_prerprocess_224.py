@@ -62,7 +62,7 @@ def load_train():
     driver_data = get_driver_data()
 
     print('Read train images')
-    for j in range(1):
+    for j in range(10):
         print('Load folder c{}'.format(j))
         path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
         files = glob.glob(path)
