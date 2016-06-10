@@ -62,17 +62,18 @@ def load_train():
     driver_data = get_driver_data()
 
     print('Read train images')
-    for j in range(10):
+    for j in range(1):
         print('Load folder c{}'.format(j))
         path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
         files = glob.glob(path)
         cnt = 0
         for fl in files:
-            flbase = os.path.basename(fl)
-            img = get_im_skipy(fl)
-            X_train.append(img)
-            y_train.append(j)
-            driver_id.append(driver_data[flbase])
+            if cnt % 1000 == 0:
+                flbase = os.path.basename(fl)
+                img = get_im_skipy(fl)
+                X_train.append(img)
+                y_train.append(j)
+                driver_id.append(driver_data[flbase])
             cnt += 1
     unique_drivers = sorted(list(set(driver_id)))
     print('Unique drivers: {}'.format(len(unique_drivers)))
@@ -111,7 +112,9 @@ def read_and_normalize_train_data():
         print('Restore train from cache!')
         (train_data, train_target, driver_id, unique_drivers) = restore_data(cache_path)
 
-    train_data = np.array(train_data)
+    print(train_data)
+    train_data = np.array(train_data,dtype=np.uint8)
+    print(train_data)
     train_target = np.array(train_target, dtype=np.uint8)
     train_data = train_data.transpose(0, 3, 1, 2)
     #train_target = np_utils.to_categorical(train_target, 10)
@@ -134,7 +137,7 @@ def read_and_normalize_test_data(batch, batch_num):
         print('Restore test from cache!')
         (test_data, test_id) = restore_data(cache_path)
 
-    test_data = np.array(test_data)
+    test_data = np.array(test_data, dtype=np.uint8)
     test_data = test_data.transpose((0, 3, 1, 2))
     test_data = test_data.astype('float32')
 
