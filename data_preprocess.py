@@ -3,7 +3,7 @@ np.random.seed(2016)
 
 import os
 import glob
-from skimage.transform import resize as imresize
+from scipy.misc import imresize
 from skimage.io import imread
 import math
 
