@@ -187,9 +187,9 @@ def main(n=5, num_epochs=82, model=None):
     target_var = T.ivector('targets')
 
     # Create neural network model
-    print("Building model and compiling functions...")
-    network = build_cnn(input_var, n)
-    print("number of parameters in model: %d" % lasagne.layers.count_params(network, trainable=True))
+    # print("Building model and compiling functions...")
+    # network = build_cnn(input_var, n)
+    # print("number of parameters in model: %d" % lasagne.layers.count_params(network, trainable=True))
 
     print("load params..")
     with np.load(model) as f:
@@ -211,7 +211,7 @@ def main(n=5, num_epochs=82, model=None):
         # Stochastic Gradient Descent (SGD) with momentum
         print("params")
         params = lasagne.layers.get_all_params(network, trainable=True)
-        lr = 0.1
+        lr = 0.01
         print("theanoshared")
         sh_lr = theano.shared(lasagne.utils.floatX(lr))
         print("updates")
@@ -332,4 +332,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,5, "cifar_model_n9.npz")
+        main(9,4, "cifar_model_n9.npz")
