@@ -192,7 +192,7 @@ def main(n=5, num_epochs=82, model=None):
     print("number of parameters in model: %d" % lasagne.layers.count_params(network, trainable=True))
 
 
-    if model==None:
+    if True:
         # Create a loss expression for training, i.e., a scalar objective we want
         # to minimize (for our multi-class problem, it is the cross-entropy loss):
         prediction = lasagne.layers.get_output(network)
@@ -236,7 +236,7 @@ def main(n=5, num_epochs=82, model=None):
     print("compile test function")
     test_fn = theano.function([input_var], test_prediction)
 
-    if model == None:
+    if True:
         # # launch the training loop
         print("Starting training...")
         #We iterate over epochs:
@@ -279,7 +279,7 @@ def main(n=5, num_epochs=82, model=None):
 
             # adjust learning rate as in paper
             # 32k and 48k iterations should be roughly equivalent to 41 and 61 epochs
-            if (epoch+1) == 41 or (epoch+1) == 61:
+            if (epoch+1) == 32 or (epoch+1) == 61:
                 new_lr = sh_lr.get_value() * 0.1
                 print("New LR:"+str(new_lr))
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
@@ -329,4 +329,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,50, "cifar10_deep_residual_model.npz")
+        main(9,50, "cifar_model_n9.npz")
