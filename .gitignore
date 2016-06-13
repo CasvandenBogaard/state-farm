@@ -3,5 +3,6 @@ cache/*
 .idea/*
 results/*
 .ipynb_checkpoints/*
+submissions/.ipynb_checkpoints/*
 *.pyc
 subm/*

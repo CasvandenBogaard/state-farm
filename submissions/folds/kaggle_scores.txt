@@ -1,11 +1,23 @@
 fold 0: 0.42492  (fold 1 on kaggle)
 fold 1: 0.44203  (fold 2 on kaggle)
 fold 2: 0.39878  (fold 3 on kaggle)
+fold 3: 0.68681
+fold 4: 0.52657
+fold 5: 0.46693
+fold 6: 0.37195
+fold 7: 0.44236
+fold 8: 0.54431
+fold 9: 0.37349
 
 
 
 combined:
  folds 0,1,2:           0.25264
+ folds 0,1,2,3,4,5,6:   0.25097
+ folds 0 until 10:      0.23846
 
 more_ensembling:
  folds 0,1,2 + old best [1]+[2]+[3]+[5]+[6]
+  0.21455
+ folds 0,1,2,3,4,5,6,7,8,9 + old best
+  not submitted yet
