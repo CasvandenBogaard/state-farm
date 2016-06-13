@@ -245,7 +245,9 @@ def main(n=5, num_epochs=82, model=None):
         #We iterate over epochs:
         for epoch in range(num_epochs):
             # shuffle training data
+            print("bla")
             print(X_train.shape[0])
+            print(epoch)
             train_indices = np.arange(X_train.shape[0])
             np.random.shuffle(train_indices)
             X_train = X_train[train_indices,:,:,:]
