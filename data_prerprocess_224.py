@@ -13,7 +13,7 @@ from sklearn.cross_validation import train_test_split
 
 
 
-USE_CACHE = 0
+USE_CACHE = 1
 # color type: 1 - grey, 3 - rgb
 
 COLOR_TYPE = 3
