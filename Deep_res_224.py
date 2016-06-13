@@ -333,4 +333,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,5, "cifar_model_n9")
+        main(9,5, "cifar_model_n9.npz")
