@@ -111,9 +111,7 @@ def read_and_normalize_train_data():
         print('Restore train from cache!')
         (train_data, train_target, driver_id, unique_drivers) = restore_data(cache_path)
 
-    print(train_data)
     train_data = np.array(train_data,dtype=np.uint8)
-    print(train_data)
     train_target = np.array(train_target, dtype=np.uint8)
     train_data = train_data.transpose(0, 3, 1, 2)
     #train_target = np_utils.to_categorical(train_target, 10)
