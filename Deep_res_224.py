@@ -258,7 +258,7 @@ def main(n=5, num_epochs=82, model=None):
             train_batches = 0
             start_time = time.time()
             print("START BATCHING!")
-            for batch in iterate_minibatches(X_train, Y_train, 4, shuffle=True, augment=True):
+            for batch in iterate_minibatches(X_train, Y_train, 8, shuffle=True, augment=True):
                 inputs, targets = batch
                 train_err += train_fn(inputs, targets)
                 train_batches += 1
