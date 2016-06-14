@@ -6,7 +6,7 @@ import datetime
 import pandas as pd
 import sys
 
-from models.vgg import vgg16_adaptation
+from models.vgg import vgg19_adaptation
 from tools import get_im_skipy, cache_data, restore_data
 from itertools import izip
 
@@ -39,6 +39,7 @@ def create_submission(predictions, test_id, info):
     suffix = info + '_' + str(now.strftime("%Y-%m-%d-%H-%M"))
     sub_file = os.path.join('subm', 'submission_' + suffix + '.csv')
     result1.to_csv(sub_file, index=False)
+    print("Submission: {}".format(sub_file))
 
 
 def read_and_normalize_test_data(batch, batch_num):
@@ -91,8 +92,8 @@ def run_single():
     batch_size = 512
 
     batches, total = generate_test_batches(batch_size)
-    model = vgg16_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-    model.load_weights(os.path.join('cache', 'vgg16_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)))
+    model = vgg19_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
+    model.load_weights(os.path.join('cache', 'vgg19_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)))
 
     test_ids = []
     yfull_test = np.zeros((total, 10))
@@ -103,7 +104,7 @@ def run_single():
 
         test_data = crop(test_data)
         result = np.array(model.predict(test_data, verbose=1, batch_size=64))
-        result = [np.average(result[i:i+3], axis=0) for i in xrange(0, len(result), 3)]
+        result = np.array([np.average(result[k:k + 3], axis=0) for k in xrange(0, len(result), 3)])
 
         yfull_test[i*batch_size:i*batch_size+len(result),:] = result
         test_ids += test_id
