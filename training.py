@@ -9,7 +9,7 @@ from sklearn.cross_validation import train_test_split
 from keras.utils import np_utils
 from sklearn.metrics import log_loss
 
-from models.vgg import vgg16_adaptation
+from models.vgg import vgg19_adaptation
 from tools import get_im_skipy, cache_data, restore_data
 from keras.preprocessing.image import ImageDataGenerator
 from scipy.misc import imresize
@@ -112,36 +112,27 @@ def copy_selected_drivers(train_data, train_target, driver_id, driver_list):
 
 def split_drivers(driver_list):
     splits = [
-        {'test': ['p056', 'p081', 'p035'],
-         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049',
-                   'p051', 'p052', 'p061', 'p064', 'p066', 'p072', 'p075', 'p050', 'p026', 'p047', 'p045']},
-        {'test': ['p039', 'p061', 'p075'],
-         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p041', 'p042', 'p049', 'p051',
-                   'p052', 'p056', 'p064', 'p066', 'p072', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
-        {'test': ['p012', 'p041', 'p064'],
-         'train': ['p002', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p042', 'p049', 'p051', 'p052',
-                   'p056', 'p061', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
-        {'test': ['p014', 'p042', 'p066'],
-         'train': ['p002', 'p012', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p049', 'p051', 'p052',
-                   'p056', 'p061', 'p064', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
-        {'test': ['p015', 'p072', 'p045'],
-         'train': ['p002', 'p012', 'p014', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051',
-                   'p052', 'p056', 'p061', 'p064', 'p066', 'p075', 'p081', 'p050', 'p026', 'p047', 'p035']},
-        {'test': ['p002', 'p016', 'p047'],
-         'train': ['p012', 'p014', 'p015', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051', 'p052',
-                   'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p045', 'p035']},
-        {'test': ['p021', 'p049'],
-         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p022', 'p024', 'p039', 'p041', 'p042', 'p051', 'p052',
-                   'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
-        {'test': ['p022', 'p050'],
-         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051',
-                   'p052', 'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p026', 'p047', 'p045', 'p035']},
-        {'test': ['p024', 'p051'],
-         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p039', 'p041', 'p042', 'p049', 'p052',
-                   'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']},
-        {'test': ['p052', 'p026'],
-         'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049',
-                   'p051', 'p056', 'p061', 'p064', 'p066', 'p072', 'p075', 'p081', 'p050', 'p047', 'p045', 'p035']}
+        {
+        'test': ['p002', 'p016', 'p056', 'p081', 'p047', 'p035'],
+        'train': ['p012', 'p014', 'p015', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051', 'p052',
+                  'p061', 'p064', 'p066', 'p072', 'p075', 'p050', 'p026', 'p045']
+        }, {
+        'test': ['p021', 'p039', 'p049', 'p061', 'p075'],
+        'train': ['p002', 'p012', 'p014', 'p015', 'p016', 'p022', 'p024', 'p041', 'p042', 'p051', 'p052', 'p056',
+                  'p064', 'p066', 'p072', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']
+        }, {
+        'test': ['p012', 'p022', 'p041', 'p064', 'p050'],
+        'train': ['p002', 'p014', 'p015', 'p016', 'p021', 'p024', 'p039', 'p042', 'p049', 'p051', 'p052', 'p056',
+                  'p061', 'p066', 'p072', 'p075', 'p081', 'p026', 'p047', 'p045', 'p035']
+        }, {
+        'test': ['p014', 'p024', 'p042', 'p051', 'p066'],
+        'train': ['p002', 'p012', 'p015', 'p016', 'p021', 'p022', 'p039', 'p041', 'p049', 'p052', 'p056', 'p061',
+                  'p064', 'p072', 'p075', 'p081', 'p050', 'p026', 'p047', 'p045', 'p035']
+        }, {
+        'test': ['p015', 'p052', 'p072', 'p026', 'p045'],
+        'train': ['p002', 'p012', 'p014', 'p016', 'p021', 'p022', 'p024', 'p039', 'p041', 'p042', 'p049', 'p051',
+                  'p056', 'p061', 'p064', 'p066', 'p075', 'p081', 'p050', 'p047', 'p035']
+        }
     ]
 
     split = splits[int(TRAIN_NUM)]
@@ -225,7 +216,7 @@ def run_single():
     augflow = augmentationgenerator.flow(X_train, Y_train, batch_size=batch_size)
 
 
-    model = vgg16_adaptation(NETWORK_IMG_SHAPE[0], NETWORK_IMG_SHAPE[1], COLOR_TYPE)
+    model = vgg19_adaptation(NETWORK_IMG_SHAPE[0], NETWORK_IMG_SHAPE[1], COLOR_TYPE)
     model.fit_generator(cropping_generator(augflow), nb_epoch=nb_epoch, verbose=1, samples_per_epoch=len(X_train),
                         nb_val_samples=len(Y_valid), validation_data=validation_generator(X_valid, Y_valid))
 
@@ -233,6 +224,6 @@ def run_single():
     score = log_loss(Y_valid, predictions_valid)
     print('Score log_loss: ', score)
 
-    model.save_weights(os.path.join('cache', 'vgg16_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)), True)
+    model.save_weights(os.path.join('cache', 'vgg19_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)), True)
 
 run_single()
