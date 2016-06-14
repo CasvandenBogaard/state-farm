@@ -290,7 +290,7 @@ def main(n=5, num_epochs=82, model=None):
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
         # dump the network weights to a file :
-        np.savez('cifar10_deep_residual_model_224.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('cifar10_deep_residual_model_224_latest.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
