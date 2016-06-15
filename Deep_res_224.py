@@ -191,11 +191,11 @@ def main(n=5, num_epochs=82, model=None):
     network = build_cnn(input_var, n)
     print("number of parameters in model: %d" % lasagne.layers.count_params(network, trainable=True))
 
-    # print("load params..")
-    # with np.load(model) as f:
-    #      param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-    # lasagne.layers.set_all_param_values(network, param_values)
-    if model == None:
+    print("load params..")
+    with np.load(model) as f:
+         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    lasagne.layers.set_all_param_values(network, param_values)
+    if True:
         # Create a loss expression for training, i.e., a scalar objective we want
         # to minimize (for our multi-class problem, it is the cross-entropy loss):
         prediction = lasagne.layers.get_output(network)
@@ -239,7 +239,7 @@ def main(n=5, num_epochs=82, model=None):
     print("compile test function")
     test_fn = theano.function([input_var], test_prediction)
 
-    if model == None:
+    if True:
         # # launch the training loop
         print("Starting training...")
         #We iterate over epochs:
@@ -290,7 +290,7 @@ def main(n=5, num_epochs=82, model=None):
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
         # dump the network weights to a file :
-        np.savez('cifar10_deep_residual_model_224_latest.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('cifar10_deep_residual_model_224_latest_2.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
