@@ -174,10 +174,10 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
 def main(n=5, num_epochs=82, model=None):
     # Load the dataset
     print("Loading data...")
-    data = load_data()
-
-    X_train = data['X_train']
-    Y_train = data['Y_train']
+    # data = load_data()
+    #
+    # X_train = data['X_train']
+    # Y_train = data['Y_train']
     # X_test = data['X_test']
     # Y_test = data['Y_test']
 
@@ -191,11 +191,11 @@ def main(n=5, num_epochs=82, model=None):
     network = build_cnn(input_var, n)
     print("number of parameters in model: %d" % lasagne.layers.count_params(network, trainable=True))
 
-    print("load params..")
-    with np.load(model) as f:
-         param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-    lasagne.layers.set_all_param_values(network, param_values)
-    if True:
+    # print("load params..")
+    # with np.load(model) as f:
+    #      param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+    # lasagne.layers.set_all_param_values(network, param_values)
+    if model == None:
         # Create a loss expression for training, i.e., a scalar objective we want
         # to minimize (for our multi-class problem, it is the cross-entropy loss):
         prediction = lasagne.layers.get_output(network)
@@ -239,7 +239,7 @@ def main(n=5, num_epochs=82, model=None):
     print("compile test function")
     test_fn = theano.function([input_var], test_prediction)
 
-    if True:
+    if model == None:
         # # launch the training loop
         print("Starting training...")
         #We iterate over epochs:
@@ -335,4 +335,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,5, "cifar_model_n9.npz")
+        main(9,5, "cifar10_deep_residual_model_224_latest.npz")
