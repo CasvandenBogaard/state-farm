@@ -211,7 +211,7 @@ def main(n=5, num_epochs=82, model=None):
         # Stochastic Gradient Descent (SGD) with momentum
         print("params")
         params = lasagne.layers.get_all_params(network, trainable=True)
-        lr = 0.01
+        lr = 0.001
         print("theanoshared")
         sh_lr = theano.shared(lasagne.utils.floatX(lr))
         print("updates")
@@ -290,7 +290,7 @@ def main(n=5, num_epochs=82, model=None):
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
         # dump the network weights to a file :
-        np.savez('cifar10_deep_residual_model_224_latest_2.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('cifar10_deep_residual_model_224_latest_3.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
@@ -335,4 +335,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,5, "cifar10_deep_residual_model_224_latest.npz")
+        main(9,5, "cifar10_deep_residual_model_224_latest_2.npz")
