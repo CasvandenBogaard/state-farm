@@ -184,10 +184,10 @@ def inceptionE(input_layer, nfilt, pool_mode):
     return ConcatLayer([l1, l2a, l2b, l3a, l3b, l4])
 
 
-def build_network():
+def build_network(input_var=None):
     net = {}
 
-    net['input'] = InputLayer((None, 3, 299, 299))
+    net['input'] = InputLayer((None, 3, 299, 299), input_var=input_var)
     net['conv'] = bn_conv(net['input'],
                           num_filters=32, filter_size=3, stride=2)
     net['conv_1'] = bn_conv(net['conv'], num_filters=32, filter_size=3)
@@ -309,7 +309,7 @@ def main(num_epochs=82, model=None):
 
     # Import Lasagne model zoo's build_network() func
 
-    network_n = build_network()
+    network_n = build_network(input_var)
     network = network_n['softmax']
 
     zoo = LasagneGradientzoo('commons/lasagne-inception-v3')
