@@ -21,7 +21,7 @@ import numpy as np
 import theano.tensor as T
 import theano
 import lasagne
-import inceptionv3_preprocess as dp
+import googlenet_preprocess as dp
 import pandas as pd
 
 # for the larger networks (n>=9), we need to adjust pythons recursion limit
@@ -68,188 +68,113 @@ def create_submission(predictions, test_id, info):
 
 # ##################### Build the neural network model #######################
 
-
-# Inception-v3, model from the paper:
-# "Rethinking the Inception Architecture for Computer Vision"
-# http://arxiv.org/abs/1512.00567
+# BLVC Googlenet, model from the paper:
+# "Going Deeper with Convolutions"
 # Original source:
-# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/models/image/imagenet/classify_image.py
-# License: http://www.apache.org/licenses/LICENSE-2.0
+# https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet
+# License: unrestricted use
 
 # Download pretrained weights from:
-# https://s3.amazonaws.com/lasagne/recipes/pretrained/imagenet/inception_v3.pkl
-
+# https://s3.amazonaws.com/lasagne/recipes/pretrained/imagenet/blvc_googlenet.pkl
 
 from lasagne.layers import InputLayer
-from lasagne.layers import Conv2DLayer
-from lasagne.layers import Pool2DLayer
 from lasagne.layers import DenseLayer
-from lasagne.layers import GlobalPoolLayer
 from lasagne.layers import ConcatLayer
-from lasagne.layers.normalization import batch_norm
-from lasagne.nonlinearities import softmax
+from lasagne.layers import NonlinearityLayer
+from lasagne.layers import GlobalPoolLayer
+from lasagne.layers.dnn import Conv2DDNNLayer as ConvLayer
+from lasagne.layers.dnn import MaxPool2DDNNLayer as PoolLayerDNN
+from lasagne.layers import MaxPool2DLayer as PoolLayer
+from lasagne.layers import LocalResponseNormalization2DLayer as LRNLayer
+from lasagne.nonlinearities import softmax, linear
 
 
-def bn_conv(input_layer, **kwargs):
-    l = Conv2DLayer(input_layer, **kwargs)
-    l = batch_norm(l, epsilon=0.001)
-    return l
-
-
-def inceptionA(input_layer, nfilt):
-    # Corresponds to a modified version of figure 5 in the paper
-    l1 = bn_conv(input_layer, num_filters=nfilt[0][0], filter_size=1)
-
-    l2 = bn_conv(input_layer, num_filters=nfilt[1][0], filter_size=1)
-    l2 = bn_conv(l2, num_filters=nfilt[1][1], filter_size=5, pad=2)
-
-    l3 = bn_conv(input_layer, num_filters=nfilt[2][0], filter_size=1)
-    l3 = bn_conv(l3, num_filters=nfilt[2][1], filter_size=3, pad=1)
-    l3 = bn_conv(l3, num_filters=nfilt[2][2], filter_size=3, pad=1)
-
-    l4 = Pool2DLayer(
-        input_layer, pool_size=3, stride=1, pad=1, mode='average_exc_pad')
-    l4 = bn_conv(l4, num_filters=nfilt[3][0], filter_size=1)
-
-    return ConcatLayer([l1, l2, l3, l4])
-
-
-def inceptionB(input_layer, nfilt):
-    # Corresponds to a modified version of figure 10 in the paper
-    l1 = bn_conv(input_layer, num_filters=nfilt[0][0], filter_size=3, stride=2)
-
-    l2 = bn_conv(input_layer, num_filters=nfilt[1][0], filter_size=1)
-    l2 = bn_conv(l2, num_filters=nfilt[1][1], filter_size=3, pad=1)
-    l2 = bn_conv(l2, num_filters=nfilt[1][2], filter_size=3, stride=2)
-
-    l3 = Pool2DLayer(input_layer, pool_size=3, stride=2)
-
-    return ConcatLayer([l1, l2, l3])
-
-
-def inceptionC(input_layer, nfilt):
-    # Corresponds to figure 6 in the paper
-    l1 = bn_conv(input_layer, num_filters=nfilt[0][0], filter_size=1)
-
-    l2 = bn_conv(input_layer, num_filters=nfilt[1][0], filter_size=1)
-    l2 = bn_conv(l2, num_filters=nfilt[1][1], filter_size=(1, 7), pad=(0, 3))
-    l2 = bn_conv(l2, num_filters=nfilt[1][2], filter_size=(7, 1), pad=(3, 0))
-
-    l3 = bn_conv(input_layer, num_filters=nfilt[2][0], filter_size=1)
-    l3 = bn_conv(l3, num_filters=nfilt[2][1], filter_size=(7, 1), pad=(3, 0))
-    l3 = bn_conv(l3, num_filters=nfilt[2][2], filter_size=(1, 7), pad=(0, 3))
-    l3 = bn_conv(l3, num_filters=nfilt[2][3], filter_size=(7, 1), pad=(3, 0))
-    l3 = bn_conv(l3, num_filters=nfilt[2][4], filter_size=(1, 7), pad=(0, 3))
-
-    l4 = Pool2DLayer(
-        input_layer, pool_size=3, stride=1, pad=1, mode='average_exc_pad')
-    l4 = bn_conv(l4, num_filters=nfilt[3][0], filter_size=1)
-
-    return ConcatLayer([l1, l2, l3, l4])
-
-
-def inceptionD(input_layer, nfilt):
-    # Corresponds to a modified version of figure 10 in the paper
-    l1 = bn_conv(input_layer, num_filters=nfilt[0][0], filter_size=1)
-    l1 = bn_conv(l1, num_filters=nfilt[0][1], filter_size=3, stride=2)
-
-    l2 = bn_conv(input_layer, num_filters=nfilt[1][0], filter_size=1)
-    l2 = bn_conv(l2, num_filters=nfilt[1][1], filter_size=(1, 7), pad=(0, 3))
-    l2 = bn_conv(l2, num_filters=nfilt[1][2], filter_size=(7, 1), pad=(3, 0))
-    l2 = bn_conv(l2, num_filters=nfilt[1][3], filter_size=3, stride=2)
-
-    l3 = Pool2DLayer(input_layer, pool_size=3, stride=2)
-
-    return ConcatLayer([l1, l2, l3])
-
-
-def inceptionE(input_layer, nfilt, pool_mode):
-    # Corresponds to figure 7 in the paper
-    l1 = bn_conv(input_layer, num_filters=nfilt[0][0], filter_size=1)
-
-    l2 = bn_conv(input_layer, num_filters=nfilt[1][0], filter_size=1)
-    l2a = bn_conv(l2, num_filters=nfilt[1][1], filter_size=(1, 3), pad=(0, 1))
-    l2b = bn_conv(l2, num_filters=nfilt[1][2], filter_size=(3, 1), pad=(1, 0))
-
-    l3 = bn_conv(input_layer, num_filters=nfilt[2][0], filter_size=1)
-    l3 = bn_conv(l3, num_filters=nfilt[2][1], filter_size=3, pad=1)
-    l3a = bn_conv(l3, num_filters=nfilt[2][2], filter_size=(1, 3), pad=(0, 1))
-    l3b = bn_conv(l3, num_filters=nfilt[2][3], filter_size=(3, 1), pad=(1, 0))
-
-    l4 = Pool2DLayer(
-        input_layer, pool_size=3, stride=1, pad=1, mode=pool_mode)
-
-    l4 = bn_conv(l4, num_filters=nfilt[3][0], filter_size=1)
-
-    return ConcatLayer([l1, l2a, l2b, l3a, l3b, l4])
-
-
-def build_network(input_var=None):
+def build_inception_module(name, input_layer, nfilters):
+    # nfilters: (pool_proj, 1x1, 3x3_reduce, 3x3, 5x5_reduce, 5x5)
     net = {}
+    net['pool'] = PoolLayerDNN(input_layer, pool_size=3, stride=1, pad=1)
+    net['pool_proj'] = ConvLayer(
+        net['pool'], nfilters[0], 1, flip_filters=False)
 
-    net['input'] = InputLayer((None, 3, 299, 299), input_var=input_var)
-    net['conv'] = bn_conv(net['input'],
-                          num_filters=32, filter_size=3, stride=2)
-    net['conv_1'] = bn_conv(net['conv'], num_filters=32, filter_size=3)
-    net['conv_2'] = bn_conv(net['conv_1'],
-                            num_filters=64, filter_size=3, pad=1)
-    net['pool'] = Pool2DLayer(net['conv_2'], pool_size=3, stride=2, mode='max')
+    net['1x1'] = ConvLayer(input_layer, nfilters[1], 1, flip_filters=False)
 
-    net['conv_3'] = bn_conv(net['pool'], num_filters=80, filter_size=1)
+    net['3x3_reduce'] = ConvLayer(
+        input_layer, nfilters[2], 1, flip_filters=False)
+    net['3x3'] = ConvLayer(
+        net['3x3_reduce'], nfilters[3], 3, pad=1, flip_filters=False)
 
-    net['conv_4'] = bn_conv(net['conv_3'], num_filters=192, filter_size=3)
+    net['5x5_reduce'] = ConvLayer(
+        input_layer, nfilters[4], 1, flip_filters=False)
+    net['5x5'] = ConvLayer(
+        net['5x5_reduce'], nfilters[5], 5, pad=2, flip_filters=False)
 
-    net['pool_1'] = Pool2DLayer(net['conv_4'],
-                                pool_size=3, stride=2, mode='max')
-    net['mixed/join'] = inceptionA(
-        net['pool_1'], nfilt=((64,), (48, 64), (64, 96, 96), (32,)))
-    net['mixed_1/join'] = inceptionA(
-        net['mixed/join'], nfilt=((64,), (48, 64), (64, 96, 96), (64,)))
+    net['output'] = ConcatLayer([
+        net['1x1'],
+        net['3x3'],
+        net['5x5'],
+        net['pool_proj'],
+        ])
 
-    net['mixed_2/join'] = inceptionA(
-        net['mixed_1/join'], nfilt=((64,), (48, 64), (64, 96, 96), (64,)))
+    return {'{}/{}'.format(name, k): v for k, v in net.items()}
 
-    net['mixed_3/join'] = inceptionB(
-        net['mixed_2/join'], nfilt=((384,), (64, 96, 96)))
 
-    net['mixed_4/join'] = inceptionC(
-        net['mixed_3/join'],
-        nfilt=((192,), (128, 128, 192), (128, 128, 128, 128, 192), (192,)))
+def build_model():
+    net = {}
+    net['input'] = InputLayer((None, 3, None, None))
+    net['conv1/7x7_s2'] = ConvLayer(
+        net['input'], 64, 7, stride=2, pad=3, flip_filters=False)
+    net['pool1/3x3_s2'] = PoolLayer(
+        net['conv1/7x7_s2'], pool_size=3, stride=2, ignore_border=False)
+    net['pool1/norm1'] = LRNLayer(net['pool1/3x3_s2'], alpha=0.00002, k=1)
+    net['conv2/3x3_reduce'] = ConvLayer(
+        net['pool1/norm1'], 64, 1, flip_filters=False)
+    net['conv2/3x3'] = ConvLayer(
+        net['conv2/3x3_reduce'], 192, 3, pad=1, flip_filters=False)
+    net['conv2/norm2'] = LRNLayer(net['conv2/3x3'], alpha=0.00002, k=1)
+    net['pool2/3x3_s2'] = PoolLayer(
+      net['conv2/norm2'], pool_size=3, stride=2, ignore_border=False)
 
-    net['mixed_5/join'] = inceptionC(
-        net['mixed_4/join'],
-        nfilt=((192,), (160, 160, 192), (160, 160, 160, 160, 192), (192,)))
+    net.update(build_inception_module('inception_3a',
+                                      net['pool2/3x3_s2'],
+                                      [32, 64, 96, 128, 16, 32]))
+    net.update(build_inception_module('inception_3b',
+                                      net['inception_3a/output'],
+                                      [64, 128, 128, 192, 32, 96]))
+    net['pool3/3x3_s2'] = PoolLayer(
+      net['inception_3b/output'], pool_size=3, stride=2, ignore_border=False)
 
-    net['mixed_6/join'] = inceptionC(
-        net['mixed_5/join'],
-        nfilt=((192,), (160, 160, 192), (160, 160, 160, 160, 192), (192,)))
+    net.update(build_inception_module('inception_4a',
+                                      net['pool3/3x3_s2'],
+                                      [64, 192, 96, 208, 16, 48]))
+    net.update(build_inception_module('inception_4b',
+                                      net['inception_4a/output'],
+                                      [64, 160, 112, 224, 24, 64]))
+    net.update(build_inception_module('inception_4c',
+                                      net['inception_4b/output'],
+                                      [64, 128, 128, 256, 24, 64]))
+    net.update(build_inception_module('inception_4d',
+                                      net['inception_4c/output'],
+                                      [64, 112, 144, 288, 32, 64]))
+    net.update(build_inception_module('inception_4e',
+                                      net['inception_4d/output'],
+                                      [128, 256, 160, 320, 32, 128]))
+    net['pool4/3x3_s2'] = PoolLayer(
+      net['inception_4e/output'], pool_size=3, stride=2, ignore_border=False)
 
-    net['mixed_7/join'] = inceptionC(
-        net['mixed_6/join'],
-        nfilt=((192,), (192, 192, 192), (192, 192, 192, 192, 192), (192,)))
+    net.update(build_inception_module('inception_5a',
+                                      net['pool4/3x3_s2'],
+                                      [128, 256, 160, 320, 32, 128]))
+    net.update(build_inception_module('inception_5b',
+                                      net['inception_5a/output'],
+                                      [128, 384, 192, 384, 48, 128]))
 
-    net['mixed_8/join'] = inceptionD(
-        net['mixed_7/join'],
-        nfilt=((192, 320), (192, 192, 192, 192)))
-
-    net['mixed_9/join'] = inceptionE(
-        net['mixed_8/join'],
-        nfilt=((320,), (384, 384, 384), (448, 384, 384, 384), (192,)),
-        pool_mode='average_exc_pad')
-
-    net['mixed_10/join'] = inceptionE(
-        net['mixed_9/join'],
-        nfilt=((320,), (384, 384, 384), (448, 384, 384, 384), (192,)),
-        pool_mode='max')
-
-    net['pool3'] = GlobalPoolLayer(net['mixed_10/join'])
-
-    net['softmax'] = DenseLayer(
-        net['pool3'], num_units=1008, nonlinearity=softmax)
-
+    net['pool5/7x7_s1'] = GlobalPoolLayer(net['inception_5b/output'])
+    net['loss3/classifier'] = DenseLayer(net['pool5/7x7_s1'],
+                                         num_units=1000,
+                                         nonlinearity=linear)
+    net['prob'] = NonlinearityLayer(net['loss3/classifier'],
+                                    nonlinearity=softmax)
     return net
-
-
 
 
 
@@ -275,7 +200,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
             random_cropped = np.zeros(inputs[excerpt].shape, dtype=np.float32)
             crops = np.random.random_integers(0,high=8,size=(batchsize,2))
             for r in range(batchsize):
-                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+299),crops[r,1]:(crops[r,1]+299)]
+                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+224),crops[r,1]:(crops[r,1]+224)]
             inp_exc = random_cropped
         else:
             inp_exc = inputs[excerpt]
@@ -309,10 +234,10 @@ def main(num_epochs=82, model=None):
 
     # Import Lasagne model zoo's build_network() func
 
-    network_n = build_network(input_var)
-    network = network_n['softmax']
+    network_n = build_model(input_var)
+    network = network_n['prob']
 
-    zoo = LasagneGradientzoo('commons/lasagne-inception-v3')
+    zoo = LasagneGradientzoo('commons/lasagne-googlenet')
     zoo.load(network)
 
     # Now your network is ready to use
@@ -340,15 +265,12 @@ def main(num_epochs=82, model=None):
         sh_lr = theano.shared(lasagne.utils.floatX(lr))
         print("updates")
 
-        # authors: "earlier experiments"
+        # parameters from section 6 of the paper
         updates = lasagne.updates.momentum(
                 loss, params, learning_rate=sh_lr, momentum=0.9)
 
-        # authors: "best models"
-        #updates = lasagne.updates.rmsprop(
-        #    loss, params, learning_rate=sh_lr, rho=0.9, epsilon=1.0)
-
-        updates = lasagne.updates.norm_constraint(updates, 2.0)
+        # not done for GoogLeNet:
+        #updates = lasagne.updates.norm_constraint(updates, 2.0)
 
 
         # Compile a function performing a training step on a mini-batch (by giving
@@ -417,13 +339,13 @@ def main(num_epochs=82, model=None):
 
             # adjust learning rate as in paper
             # 32k and 48k iterations should be roughly equivalent to 41 and 61 epochs
-            if (epoch%2) == 0:
-                new_lr = sh_lr.get_value() * 0.94
+            if (epoch%8) == 0:
+                new_lr = sh_lr.get_value() * 0.96
                 print("New LR:"+str(new_lr))
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
         # dump the network weights to a file :
-        np.savez('inceptionv3_run1.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('GoogLeNet_run1.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
@@ -448,7 +370,7 @@ def main(num_epochs=82, model=None):
         yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
         test_ids += test_id
 
-    info_string = 'inceptionv3' + str(299) + '_c_' + str(299)
+    info_string = 'GoogLeNet' + str(224) + '_c_' + str(224)
 
     create_submission(yfull_test, test_ids, info_string)
 
@@ -456,16 +378,15 @@ def main(num_epochs=82, model=None):
 
 if __name__ == '__main__':
     if ('--help' in sys.argv) or ('-h' in sys.argv):
-        print("Trains InceptionV3.")
+        print("Trains GoogLeNet.")
 
-        # Inception-v3, model from the paper:
-        #
-        # http://arxiv.org/abs/1512.00567
+        # BLVC Googlenet, model from the paper:
+        # "Going Deeper with Convolutions"
         # Original source:
-        # https://github.com/tensorflow/tensorflow/blob/master/tensorflow/models/image/imagenet/classify_image.py
-        # License: http://www.apache.org/licenses/LICENSE-2.0
+        # https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet
+        # License: unrestricted use
 
-        print("Network architecture and training parameters are as in section 8 of 'Rethinking the Inception Architecture for Computer Vision'.")
+        print("Network architecture and training parameters are as in section 6 in 'Going Deeper with Convolutions'.")
         print("Usage: %s [N [MODEL]]" % sys.argv[0])
         print()
         print("MODEL: saved model file to load (for validation) (default: None)")
@@ -477,4 +398,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(5, "inceptionv3_run1.npz")
+        main(5, "GoogLeNet_run1.npz")

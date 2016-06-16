@@ -36,7 +36,7 @@ def create_submission(predictions, test_id, info):
     now = datetime.datetime.now()
     if not os.path.isdir('subm'):
         os.mkdir('subm')
-    suffix = info + '_' + str(now.strftime("%Y-%m-%d-%H-%M"))
+    suffix = info + '_subset_' + str(TRAIN_NUM) + '_' + str(now.strftime("%Y-%m-%d-%H-%M"))
     sub_file = os.path.join('subm', 'submission_' + suffix + '.csv')
     result1.to_csv(sub_file, index=False)
     print("Submission: {}".format(sub_file))
