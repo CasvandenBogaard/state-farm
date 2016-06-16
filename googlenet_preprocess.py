@@ -62,19 +62,17 @@ def load_train():
     driver_data = get_driver_data()
 
     print('Read train images')
-    for j in range(1):
+    for j in range(10):
         print('Load folder c{}'.format(j))
         path = os.path.join('data', 'imgs', 'train', 'c' + str(j), '*.jpg')
         files = glob.glob(path)
         cnt = 0
         for fl in files:
-            if cnt % 1000 == 0:
-                flbase = os.path.basename(fl)
-                img = get_im_skipy(fl)
-                X_train.append(img)
-                y_train.append(j)
-                driver_id.append(driver_data[flbase])
-            cnt += 1
+            flbase = os.path.basename(fl)
+            img = get_im_skipy(fl)
+            X_train.append(img)
+            y_train.append(j)
+            driver_id.append(driver_data[flbase])
     unique_drivers = sorted(list(set(driver_id)))
     print('Unique drivers: {}'.format(len(unique_drivers)))
     print(unique_drivers)

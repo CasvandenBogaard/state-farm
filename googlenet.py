@@ -21,7 +21,7 @@ import numpy as np
 import theano.tensor as T
 import theano
 import lasagne
-import inceptionv3_preprocess as dp
+import googlenet_preprocess as dp
 import pandas as pd
 
 # for the larger networks (n>=9), we need to adjust pythons recursion limit
@@ -67,7 +67,6 @@ def create_submission(predictions, test_id, info):
     result1.to_csv(sub_file, index=False)
 
 # ##################### Build the neural network model #######################
-
 
 # BLVC Googlenet, model from the paper:
 # "Going Deeper with Convolutions"
@@ -179,6 +178,8 @@ def build_model():
 
 
 
+
+
 # ############################# Batch iterator ###############################
 
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False):
@@ -199,7 +200,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False, augment=False
             random_cropped = np.zeros(inputs[excerpt].shape, dtype=np.float32)
             crops = np.random.random_integers(0,high=8,size=(batchsize,2))
             for r in range(batchsize):
-                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+224),crops[r,1]:(crops[r,1]+244)]
+                random_cropped[r,:,:,:] = padded[r,:,crops[r,0]:(crops[r,0]+224),crops[r,1]:(crops[r,1]+224)]
             inp_exc = random_cropped
         else:
             inp_exc = inputs[excerpt]
@@ -231,13 +232,13 @@ def main(num_epochs=82, model=None):
     # Create neural network model
     print("Building model and compiling functions...")
 
-    # Import Lasagne model zoo's build_model() func
+    # Import Lasagne model zoo's build_network() func
 
-    network = build_model()
-    output_layer = network['prob']
+    network_n = build_model(input_var)
+    network = network_n['prob']
 
     zoo = LasagneGradientzoo('commons/lasagne-googlenet')
-    zoo.load(output_layer)
+    zoo.load(network)
 
     # Now your network is ready to use
 
@@ -263,8 +264,14 @@ def main(num_epochs=82, model=None):
         print("theanoshared")
         sh_lr = theano.shared(lasagne.utils.floatX(lr))
         print("updates")
+
+        # parameters from section 6 of the paper
         updates = lasagne.updates.momentum(
                 loss, params, learning_rate=sh_lr, momentum=0.9)
+
+        # not done for GoogLeNet:
+        #updates = lasagne.updates.norm_constraint(updates, 2.0)
+
 
         # Compile a function performing a training step on a mini-batch (by giving
         # the updates dictionary) and returning the corresponding training loss:
@@ -332,14 +339,13 @@ def main(num_epochs=82, model=None):
 
             # adjust learning rate as in paper
             # 32k and 48k iterations should be roughly equivalent to 41 and 61 epochs
-            if (epoch+1) == 41 or (epoch+1) == 61:
-                new_lr = sh_lr.get_value() * 0.1
+            if (epoch%8) == 0:
+                new_lr = sh_lr.get_value() * 0.96
                 print("New LR:"+str(new_lr))
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
-
         # dump the network weights to a file :
-        np.savez('Googlenet_run1.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('GoogLeNet_run1.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
@@ -364,7 +370,7 @@ def main(num_epochs=82, model=None):
         yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
         test_ids += test_id
 
-    info_string = 'googlenet' + str(224) + '_c_' + str(224)
+    info_string = 'GoogLeNet' + str(224) + '_c_' + str(224)
 
     create_submission(yfull_test, test_ids, info_string)
 
@@ -372,7 +378,7 @@ def main(num_epochs=82, model=None):
 
 if __name__ == '__main__':
     if ('--help' in sys.argv) or ('-h' in sys.argv):
-        print("Trains Googlenet.")
+        print("Trains GoogLeNet.")
 
         # BLVC Googlenet, model from the paper:
         # "Going Deeper with Convolutions"
@@ -380,10 +386,7 @@ if __name__ == '__main__':
         # https://github.com/BVLC/caffe/tree/master/models/bvlc_googlenet
         # License: unrestricted use
 
-
-
-
-        print("Network architecture and training parameters are as in 'Going Deeper with Convolutions'")
+        print("Network architecture and training parameters are as in section 6 in 'Going Deeper with Convolutions'.")
         print("Usage: %s [N [MODEL]]" % sys.argv[0])
         print()
         print("MODEL: saved model file to load (for validation) (default: None)")
@@ -395,4 +398,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(5, "Googlenet_run1.npz")
+        main(5, "GoogLeNet_run1.npz")

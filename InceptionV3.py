@@ -465,7 +465,7 @@ if __name__ == '__main__':
         # https://github.com/tensorflow/tensorflow/blob/master/tensorflow/models/image/imagenet/classify_image.py
         # License: http://www.apache.org/licenses/LICENSE-2.0
 
-        print("Network architecture and training parameters are as in 'Rethinking the Inception Architecture for Computer Vision.'")
+        print("Network architecture and training parameters are as in section 8 of 'Rethinking the Inception Architecture for Computer Vision'.")
         print("Usage: %s [N [MODEL]]" % sys.argv[0])
         print()
         print("MODEL: saved model file to load (for validation) (default: None)")
