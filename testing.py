@@ -16,7 +16,7 @@ COLOR_TYPE = 3
 IMG_SHAPE = (224, 298)
 NETWORK_IMG_SHAPE = (224, 224)
 
-# TRAIN_NUM = sys.argv[1]
+TRAIN_NUM = sys.argv[1]
 
 def load_test(files):
     X_test = []
@@ -30,13 +30,13 @@ def load_test(files):
     return X_test, X_test_id
 
 
-def create_submission(predictions, test_id, info, idx):
+def create_submission(predictions, test_id, info):
     result1 = pd.DataFrame(predictions, columns=['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'])
     result1.loc[:, 'img'] = pd.Series(test_id, index=result1.index)
     now = datetime.datetime.now()
     if not os.path.isdir('subm'):
         os.mkdir('subm')
-    suffix = info + '_fold' + str(idx) +'_' + str(now.strftime("%Y-%m-%d-%H-%M"))
+    suffix = info + '_' + str(now.strftime("%Y-%m-%d-%H-%M"))
     sub_file = os.path.join('subm', 'submission_' + suffix + '.csv')
     result1.to_csv(sub_file, index=False)
     print("Submission: {}".format(sub_file))
@@ -92,40 +92,27 @@ def run_single():
     batch_size = 512
 
     batches, total = generate_test_batches(batch_size)
-
-    NUM_FOLDS = 10
-
-    models = []
-    for nfold in range(NUM_FOLDS):
-        model = vgg19_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
-        model.load_weights(os.path.join('cache', 'vgg19_adapt_crops_weights_{}.h5'.format(nfold)))
-        models.append(model)
+    model = vgg19_adaptation(IMG_SHAPE[0], IMG_SHAPE[1], COLOR_TYPE)
+    model.load_weights(os.path.join('cache', 'vgg19_adapt_crops_weights_{}.h5'.format(TRAIN_NUM)))
 
     test_ids = []
-
-    yfull = []
-    for i in range(NUM_FOLDS):
-        yfull_test = np.zeros((total, 10))
-        yfull.append(yfull_test)
+    yfull_test = np.zeros((total, 10))
 
 
     for i, batch in enumerate(batches):
         test_data, test_id = read_and_normalize_test_data(batch, i)
 
         test_data = crop(test_data)
+        result = np.array(model.predict(test_data, verbose=1, batch_size=64))
+        result = np.array([np.average(result[k:k + 3], axis=0) for k in xrange(0, len(result), 3)])
 
-        for nfold in range(NUM_FOLDS):
-            result = np.array(models[nfold].predict(test_data, verbose=1, batch_size=64))
-            result = np.array([np.average(result[k:k + 3], axis=0) for k in xrange(0, len(result), 3)])
-
-            yfull[nfold][i*batch_size:i*batch_size+len(result),:] = result
+        yfull_test[i*batch_size:i*batch_size+len(result),:] = result
         test_ids += test_id
 
 
     info_string = str(IMG_SHAPE[0]) + '_c_' + str(IMG_SHAPE[1])
 
-    for nfold in range(NUM_FOLDS):
-        create_submission(yfull[nfold], test_ids, info_string, nfold)
+    create_submission(yfull_test, test_ids, info_string)
 
 
 run_single()
