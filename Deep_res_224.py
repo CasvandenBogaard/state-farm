@@ -21,8 +21,10 @@ import numpy as np
 import theano.tensor as T
 import theano
 import lasagne
-import data_prerprocess_224 as dp
+import data_preprocess_splitted_224 as dp
 import pandas as pd
+
+TRAIN_NUM = sys.argv[1]
 
 # for the larger networks (n>=9), we need to adjust pythons recursion limit
 sys.setrecursionlimit(10000)
@@ -40,7 +42,7 @@ def unpickle(file):
 
 def load_data():
     print("no loading")
-    X_train, Y_train, train_index = dp.get_train_data()
+    X_train, Y_train, train_index = dp.get_train_data(TRAIN_NUM)
 
     print(X_train.shape)
 
@@ -284,13 +286,13 @@ def main(n=5, num_epochs=82, model=None):
 
             # adjust learning rate as in paper
             # 32k and 48k iterations should be roughly equivalent to 41 and 61 epochs
-            if (epoch+1) == 41 or (epoch+1) == 61:
+            if (epoch+1) == 10 or (epoch+1) == 61:
                 new_lr = sh_lr.get_value() * 0.1
                 print("New LR:"+str(new_lr))
                 sh_lr.set_value(lasagne.utils.floatX(new_lr))
 
         # dump the network weights to a file :
-        np.savez('cifar10_deep_residual_model_224_latest_3.npz', *lasagne.layers.get_all_param_values(network))
+        np.savez('cifar10_deep_residual_model_224_folded_' + TRAIN_NUM + '.npz', *lasagne.layers.get_all_param_values(network))
     else:
         # load network weights from model file\
         print("GOIJAOIJGIOJIOEJIOEJAIOGOIEPHIOGHIOEHIOAHGIOHEAOIHGIOHIO")
@@ -313,7 +315,7 @@ def main(n=5, num_epochs=82, model=None):
         yfull_test[i*batch_size:i*batch_size+len(scores),:] = scores
         test_ids += test_id
 
-    info_string = 'lasagne' + str(224) + '_c_' + str(224)
+    info_string = 'lasagne' + '_c_' + "_fold_" + TRAIN_NUM
 
     create_submission(yfull_test, test_ids, info_string)
 
@@ -335,4 +337,4 @@ if __name__ == '__main__':
             kwargs['model'] = sys.argv[2]
         #main(**kwargs)
         #main(5,2,"cifar_model_n5.npz")
-        main(9,5, "cifar10_deep_residual_model_224_latest_2.npz")
+        main(9,15, "cifar_model_n9.npz")
