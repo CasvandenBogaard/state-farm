@@ -1,0 +1,6 @@
+6/17:
+
+on gcn7, we have inceptionv3 train for 6 epochs in the "earlier experiments" setting from the paper .. output: run1. file: InceptionV3_first.py
+on gcn28, we have inceptionv3 train for 6 epochs in the "author's best" setting from the paper .. output: run2. file: InceptionV3_best.py
+
+damn it, errors... leaving it rest for now, focus on CADiMI today.
