@@ -1,0 +1,6 @@
+06-03-01-23 logloss = [0.46109] method=vgg16, epoch=20
+06-03-02-17 logloss = [0.57614] method=vgg16, epoch=20
+06-04-21-07 logloss = [0.52423] method=vgg16, epoch=12, data augmentation
+06-04-23-44 logloss = [0.71747] method=vgg16, epoch=12, data augmentation
+06-08-21-44 logloss = [0.39380] method=vgg16, epoch=15, data augmentation
+06-08-21-48 logloss = [0.54492] method=vgg16, epoch=15, data augmentation

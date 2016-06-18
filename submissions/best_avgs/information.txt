@@ -1,0 +1,4 @@
+0 = vgg19 10 folds
+1 = vgg19 5 folds
+2 = vgg16 10 folds
+3 = vgg16 5 random experiments

@@ -1,0 +1,9 @@
+1-5 = vgg16 no crops
+6-16 = vgg16 crops folds 0 to 9
+17-21 = vgg19 crops first try folds 0 to 4
+22 = lasagne_try1
+23 = best_normalized
+24 = best_normalized_2_half1
+25 = best_normalized_2_half2
+26 = out_NewLR5NoAll
+27 = out_RF500YesAll
